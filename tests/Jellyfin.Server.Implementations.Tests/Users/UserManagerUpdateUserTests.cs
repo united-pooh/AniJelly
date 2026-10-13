@@ -150,14 +150,14 @@ public sealed class UserManagerUpdateUserTests : IDisposable
 
         user.SetPermission(PermissionKind.IsAdministrator, true);
         user.SetPreference(PreferenceKind.BlockedTags, ["spoilers"]);
-        user.Permissions.Remove(user.Permissions.First(permission => permission.Kind == PermissionKind.EnableAllChannels));
+        user.Permissions.Remove(user.Permissions.First(permission => permission.Kind == PermissionKind.EnableAllDevices));
 
         await _userManager.UpdateUserAsync(user);
 
         var reloaded = _userManager.GetUserById(user.Id)!;
         Assert.True(reloaded.HasPermission(PermissionKind.IsAdministrator));
         Assert.Equal(new[] { "spoilers" }, reloaded.GetPreference(PreferenceKind.BlockedTags));
-        Assert.DoesNotContain(reloaded.Permissions, permission => permission.Kind == PermissionKind.EnableAllChannels);
+        Assert.DoesNotContain(reloaded.Permissions, permission => permission.Kind == PermissionKind.EnableAllDevices);
 
         await using var context = CreateDbContext();
         Assert.Equal(reloaded.Permissions.Count, await context.Permissions.CountAsync(TestContext.Current.CancellationToken));

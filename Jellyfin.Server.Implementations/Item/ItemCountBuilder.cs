@@ -49,10 +49,6 @@ internal static class ItemCountBuilder
             {
                 result.MusicVideoCount += count;
             }
-            else if (string.Equals(type, lookup[BaseItemKind.LiveTvProgram], StringComparison.Ordinal))
-            {
-                result.ProgramCount += count;
-            }
             else if (string.Equals(type, lookup[BaseItemKind.Series], StringComparison.Ordinal))
             {
                 result.SeriesCount += count;

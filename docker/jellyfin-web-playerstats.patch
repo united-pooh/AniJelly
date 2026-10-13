@@ -1,0 +1,566 @@
+diff --git a/src/components/playerstats/playerstats.js b/src/components/playerstats/playerstats.js
+--- a/src/components/playerstats/playerstats.js
++++ b/src/components/playerstats/playerstats.js
+@@ -52,7 +52,7 @@
+ }
+ 
+ function renderStats(elem, categories) {
+-    elem.querySelector('.playerStats-stats').innerHTML = categories.map(function (category) {
++    const html = categories.map(function (category) {
+         let categoryHtml = '';
+ 
+         const stats = category.stats;
+@@ -89,26 +89,66 @@
+ 
+         return categoryHtml;
+     }).join('');
+-}
+-
+-function getSession(instance, player) {
+-    const now = new Date().getTime();
+-
+-    if ((now - (instance.lastSessionTime || 0)) < 10000) {
+-        return Promise.resolve(instance.lastSession);
+-    }
+-
+-    const apiClient = ServerConnections.getApiClient(playbackManager.currentItem(player).ServerId);
+-
+-    return apiClient.getSessions({
+-        deviceId: apiClient.deviceId()
+-    }).then(function (sessions) {
+-        instance.lastSession = sessions[0] || {};
+-        instance.lastSessionTime = new Date().getTime();
+-
+-        return Promise.resolve(instance.lastSession);
+-    }, function () {
+-        return Promise.resolve({});
++
++    const content = elem.querySelector('.playerStats-stats');
++    if (content.innerHTML !== html) {
++        content.innerHTML = html;
++    }
++}
++
++function getPlaybackKey(player) {
++    const item = playbackManager.currentItem(player);
++    return JSON.stringify([
++        item?.ServerId,
++        item?.Id,
++        playbackManager.currentMediaSource(player)?.Id,
++        playbackManager.playSessionId(player)
++    ]);
++}
++
++function renderCurrentStats(instance, player, state) {
++    if (instance.element && instance.enabled() && instance.statsState === state
++        && state.key === getPlaybackKey(player)) {
++        renderStats(instance.element, getStats(state, player));
++    }
++}
++
++function refreshSession(instance, player, state) {
++    if (state.sessionPending || (state.lastSessionTime != null && Date.now() - state.lastSessionTime < 10000)) {
++        return;
++    }
++
++    const item = playbackManager.currentItem(player);
++    if (!item) return;
++
++    state.sessionPending = true;
++    const playSessionId = playbackManager.playSessionId(player);
++    Promise.resolve().then(() => {
++        const apiClient = ServerConnections.getApiClient(item.ServerId);
++        return apiClient.getSessions({ deviceId: apiClient.deviceId() });
++    }).then(sessions => {
++        state.session = sessions.find(session => session.NowPlayingItem?.Id === item.Id
++            && (!session.PlayState?.PlaySessionId || session.PlayState.PlaySessionId === playSessionId)) || {};
++    }).catch(error => {
++        console.warn('Unable to refresh playback session statistics', error);
++    }).finally(() => {
++        state.sessionPending = false;
++        state.lastSessionTime = Date.now();
++        renderCurrentStats(instance, player, state);
++    });
++}
++
++function refreshPlayerStats(instance, player, state) {
++    if (!player.getStats || state.playerStatsPending) return;
++
++    state.playerStatsPending = true;
++    Promise.resolve().then(() => player.getStats()).then(result => {
++        state.playerStats = result.categories || [];
++    }).catch(error => {
++        console.warn('Unable to refresh player statistics', error);
++    }).finally(() => {
++        state.playerStatsPending = false;
++        renderCurrentStats(instance, player, state);
+     });
+ }
+ 
+@@ -197,7 +237,7 @@
+     return `${transcodeFramerate} fps (${(transcodeFramerate / originalFramerate).toFixed(2)}x)`;
+ }
+ 
+-function getMediaSourceStats(session, player) {
++function getMediaSourceStats(player) {
+     const sessionStats = [];
+ 
+     const mediaSource = playbackManager.currentMediaSource(player) || {};
+@@ -374,96 +414,89 @@
+     return syncStats;
+ }
+ 
+-function getStats(instance, player) {
+-    const statsPromise = player.getStats ? player.getStats() : Promise.resolve({});
+-    const sessionPromise = getSession(instance, player);
+-
+-    return Promise.all([statsPromise, sessionPromise]).then(function (responses) {
+-        const playerStatsResult = responses[0];
+-        const playerStats = playerStatsResult.categories || [];
+-        const session = responses[1];
+-
+-        const displayPlayMethod = playMethodHelper.getDisplayPlayMethod(session);
+-        let localizedDisplayMethod = displayPlayMethod;
+-
+-        if (displayPlayMethod === 'DirectPlay') {
+-            localizedDisplayMethod = globalize.translate('DirectPlaying');
+-        } else if (displayPlayMethod === 'Remux') {
+-            localizedDisplayMethod = globalize.translate('Remuxing');
+-        } else if (displayPlayMethod === 'DirectStream') {
+-            localizedDisplayMethod = globalize.translate('DirectStreaming');
+-        } else if (displayPlayMethod === 'Transcode') {
+-            localizedDisplayMethod = globalize.translate('Transcoding');
+-        }
+-
+-        const baseCategory = {
+-            stats: [],
+-            name: globalize.translate('LabelPlaybackInfo')
+-        };
+-
+-        const playerInfos = [];
+-        playerInfos.push(player.name);
++function getStats(state, player) {
++    const { playerStats, session } = state;
++
++    const displayPlayMethod = playMethodHelper.getDisplayPlayMethod(session);
++    let localizedDisplayMethod = displayPlayMethod;
++
++    if (displayPlayMethod === 'DirectPlay') {
++        localizedDisplayMethod = globalize.translate('DirectPlaying');
++    } else if (displayPlayMethod === 'Remux') {
++        localizedDisplayMethod = globalize.translate('Remuxing');
++    } else if (displayPlayMethod === 'DirectStream') {
++        localizedDisplayMethod = globalize.translate('DirectStreaming');
++    } else if (displayPlayMethod === 'Transcode') {
++        localizedDisplayMethod = globalize.translate('Transcoding');
++    }
++
++    const baseCategory = {
++        stats: [],
++        name: globalize.translate('LabelPlaybackInfo')
++    };
++
++    const playerInfos = [];
++    playerInfos.push(player.name);
++    if (localizedDisplayMethod) {
+         playerInfos.push(`(${localizedDisplayMethod})`);
+-        baseCategory.stats.push({
+-            label: globalize.translate('LabelPlayer'),
+-            value: playerInfos.join('  ')
+-        });
+-
+-        const categories = [];
+-        categories.push(baseCategory);
+-        for (let i = 0, length = playerStats.length; i < length; i++) {
+-            const category = playerStats[i];
+-            categories.push(category);
+-        }
+-
+-        let localizedTranscodingInfo = globalize.translate('LabelTranscodingInfo');
+-        if (displayPlayMethod === 'Remux') {
+-            localizedTranscodingInfo = globalize.translate('LabelRemuxingInfo');
+-        } else if (displayPlayMethod === 'DirectStream') {
+-            localizedTranscodingInfo = globalize.translate('LabelDirectStreamingInfo');
+-        }
+-
+-        if (session.TranscodingInfo) {
+-            categories.push({
+-                stats: getTranscodingStats(session, player, displayPlayMethod),
+-                name: localizedTranscodingInfo
+-            });
+-        }
+-
++    }
++    baseCategory.stats.push({
++        label: globalize.translate('LabelPlayer'),
++        value: playerInfos.join('  ')
++    });
++
++    const categories = [];
++    categories.push(baseCategory);
++    for (let i = 0, length = playerStats.length; i < length; i++) {
++        const category = playerStats[i];
++        categories.push(category);
++    }
++
++    let localizedTranscodingInfo = globalize.translate('LabelTranscodingInfo');
++    if (displayPlayMethod === 'Remux') {
++        localizedTranscodingInfo = globalize.translate('LabelRemuxingInfo');
++    } else if (displayPlayMethod === 'DirectStream') {
++        localizedTranscodingInfo = globalize.translate('LabelDirectStreamingInfo');
++    }
++
++    if (session.TranscodingInfo) {
+         categories.push({
+-            stats: getMediaSourceStats(session, player),
+-            name: globalize.translate('LabelOriginalMediaInfo')
+-        });
+-
+-        const syncPlayStats = getSyncPlayStats();
+-        if (syncPlayStats.length > 0) {
+-            categories.push({
+-                stats: syncPlayStats,
+-                name: globalize.translate('LabelSyncPlayInfo')
+-            });
+-        }
+-
+-        return Promise.resolve(categories);
+-    });
+-}
+-
+-function renderPlayerStats(instance, player) {
+-    const now = new Date().getTime();
+-
+-    if ((now - (instance.lastRender || 0)) < 700) {
+-        return;
+-    }
+-
++            stats: getTranscodingStats(session, player, displayPlayMethod),
++            name: localizedTranscodingInfo
++        });
++    }
++
++    categories.push({
++        stats: getMediaSourceStats(player),
++        name: globalize.translate('LabelOriginalMediaInfo')
++    });
++
++    const syncPlayStats = getSyncPlayStats();
++    if (syncPlayStats.length > 0) {
++        categories.push({
++            stats: syncPlayStats,
++            name: globalize.translate('LabelSyncPlayInfo')
++        });
++    }
++
++    return categories;
++}
++
++function renderPlayerStats(instance, player, force = false) {
++    const now = Date.now();
++    const key = getPlaybackKey(player);
++    if (instance.statsState?.key !== key) {
++        instance.statsState = { key, playerStats: [], session: {} };
++        force = true;
++    }
++
++    if (!force && now - (instance.lastRender || 0) < 700) return;
+     instance.lastRender = now;
+ 
+-    getStats(instance, player).then(function (stats) {
+-        const elem = instance.element;
+-        if (!elem) {
+-            return;
+-        }
+-
+-        renderStats(elem, stats);
+-    });
++    const state = instance.statsState;
++    renderCurrentStats(instance, player, state);
++    refreshPlayerStats(instance, player, state);
++    refreshSession(instance, player, state);
+ }
+ 
+ function bindEvents(instance, player) {
+@@ -480,6 +513,7 @@
+ 
+     if (localOnTimeUpdate) {
+         Events.off(player, 'timeupdate', localOnTimeUpdate);
++        instance.onTimeUpdate = null;
+     }
+ }
+ 
+@@ -499,7 +533,7 @@
+ 
+         const options = this.options;
+ 
+-        if (!options) {
++        if (!options || this._enabled === enabled) {
+             return;
+         }
+ 
+@@ -507,6 +541,7 @@
+         if (enabled) {
+             this.element.classList.remove('hide');
+             bindEvents(this, options.player);
++            renderPlayerStats(this, options.player, true);
+         } else {
+             this.element.classList.add('hide');
+             unbindEvents(this, options.player);
+@@ -518,6 +553,8 @@
+     }
+ 
+     destroy() {
++        this._enabled = false;
++        this.statsState = null;
+         const options = this.options;
+ 
+         if (options) {
+diff --git a/src/apps/legacy/controllers/playback/video/index.js b/src/apps/legacy/controllers/playback/video/index.js
+--- a/src/apps/legacy/controllers/playback/video/index.js
++++ b/src/apps/legacy/controllers/playback/video/index.js
+@@ -28,6 +28,7 @@
+ import 'styles/videoosd.scss';
+ import shell from 'scripts/shell';
+ import SubtitleSync from 'components/subtitlesync/subtitlesync';
++import PlayerStats from 'components/playerstats/playerstats';
+ import { appRouter } from 'components/router/appRouter';
+ import { ServerConnections } from 'lib/jellyfin-apiclient';
+ import LibraryMenu from 'scripts/libraryMenu';
+@@ -816,19 +817,15 @@
+     }
+ 
+     function toggleStats() {
+-        import('components/playerstats/playerstats').then(({ default: PlayerStats }) => {
+-            const player = currentPlayer;
+-
+-            if (player) {
+-                if (statsOverlay) {
+-                    statsOverlay.toggle();
+-                } else {
+-                    statsOverlay = new PlayerStats({
+-                        player: player
+-                    });
+-                }
+-            }
+-        });
++        const player = currentPlayer;
++
++        if (player) {
++            if (statsOverlay) {
++                statsOverlay.toggle();
++            } else {
++                statsOverlay = new PlayerStats({ player });
++            }
++        }
+     }
+ 
+     function destroyStats() {
+diff --git a/src/components/playerstats/playerstats.test.js b/src/components/playerstats/playerstats.test.js
+new file mode 100644
+--- /dev/null
++++ b/src/components/playerstats/playerstats.test.js
+@@ -0,0 +1,203 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
++
++import Events from 'utils/events';
++import { playbackManager } from '../playback/playbackmanager';
++import PlayerStats from './playerstats';
++
++const mocks = vi.hoisted(() => ({ getSessions: vi.fn() }));
++vi.mock('lib/globalize', () => ({ default: { translate: key => key } }));
++vi.mock('lib/jellyfin-apiclient', () => ({
++    ServerConnections: {
++        getApiClient: () => ({ getSessions: mocks.getSessions, deviceId: () => 'device' })
++    }
++}));
++vi.mock('../layoutManager', () => ({ default: { tv: false } }));
++vi.mock('../playback/playbackmanager', () => ({
++    playbackManager: {
++        playSessionId: vi.fn(),
++        currentItem: vi.fn(),
++        currentMediaSource: vi.fn(),
++        getAudioStreamIndex: vi.fn(() => 1),
++        audioTracks: vi.fn(() => [{ Type: 'Audio', Index: 1, Codec: 'aac' }])
++    }
++}));
++vi.mock('../pluginManager', () => ({ pluginManager: { firstOfType: () => undefined } }));
++vi.mock('elements/emby-button/paper-icon-button-light', () => ({}));
++
++const source = {
++    Id: 'source', Container: 'mp4',
++    MediaStreams: [{ Type: 'Video', Codec: 'h264', Width: 1920, Height: 1080 }]
++};
++const session = {
++    NowPlayingItem: { Id: 'item' },
++    PlayState: { PlayMethod: 'DirectPlay', PlaySessionId: 'play-session' }
++};
++function deferred() {
++    let resolve;
++    let reject;
++    const promise = new Promise((a, b) => {
++        resolve = a;
++        reject = b;
++    });
++    return { promise, resolve, reject };
++}
++async function flush() {
++    for (let i = 0; i < 12; i++) await Promise.resolve();
++}
++const content = () => document.querySelector('.playerStats-stats')?.textContent;
++let panel;
++let player;
++
++beforeEach(() => {
++    vi.useFakeTimers();
++    vi.clearAllMocks();
++    playbackManager.playSessionId.mockReturnValue('play-session');
++    playbackManager.currentItem.mockReturnValue({ Id: 'item', ServerId: 'server' });
++    playbackManager.currentMediaSource.mockReturnValue(source);
++    player = {
++        name: 'HTML Video',
++        getStats: vi.fn().mockResolvedValue({ categories: [{ stats: [{ label: 'Sizes', value: '1920x1080' }] }] })
++    };
++    mocks.getSessions.mockResolvedValue([session]);
++});
++afterEach(() => {
++    panel?.destroy();
++    panel = null;
++    document.body.innerHTML = '';
++    vi.useRealTimers();
++});
++
++describe('playback information latency', () => {
++    it('renders media information synchronously while paused without timeupdate', () => {
++        panel = new PlayerStats({ player });
++        expect(content()).toContain('H264');
++        expect(content()).toContain('mp4');
++        expect(content()).not.toContain('null');
++    });
++
++    it('shows local player data while the server session is still pending', async () => {
++        mocks.getSessions.mockReturnValue(deferred().promise);
++        panel = new PlayerStats({ player });
++        await flush();
++        expect(content()).toContain('1920x1080');
++        expect(content()).toContain('H264');
++    });
++
++    it('does not pile up either request while a slow request is in flight', async () => {
++        mocks.getSessions.mockReturnValue(deferred().promise);
++        player.getStats.mockReturnValue(deferred().promise);
++        panel = new PlayerStats({ player });
++        for (let i = 0; i < 6; i++) {
++            Events.trigger(player, 'timeupdate');
++            await vi.advanceTimersByTimeAsync(800);
++        }
++        expect(mocks.getSessions).toHaveBeenCalledTimes(1);
++        expect(player.getStats).toHaveBeenCalledTimes(1);
++        expect(content()).toContain('H264');
++    });
++
++    it('shows server information even if player statistics never resolve', async () => {
++        player.getStats.mockReturnValue(deferred().promise);
++        panel = new PlayerStats({ player });
++        await flush();
++        expect(content()).toContain('DirectPlaying');
++        expect(content()).toContain('H264');
++    });
++
++    it('keeps metadata visible and backs off after a server error', async () => {
++        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
++        mocks.getSessions.mockRejectedValue(new Error('offline'));
++        player.getStats.mockRejectedValue(new Error('player unavailable'));
++        panel = new PlayerStats({ player });
++        await flush();
++        await vi.advanceTimersByTimeAsync(800);
++        Events.trigger(player, 'timeupdate');
++        await flush();
++        expect(content()).toContain('H264');
++        expect(mocks.getSessions).toHaveBeenCalledTimes(1);
++        expect(console.warn).toHaveBeenCalled();
++    });
++
++    it('caches sessions for ten seconds then refreshes', async () => {
++        panel = new PlayerStats({ player });
++        await flush();
++        await vi.advanceTimersByTimeAsync(9000);
++        Events.trigger(player, 'timeupdate');
++        await flush();
++        expect(mocks.getSessions).toHaveBeenCalledTimes(1);
++        await vi.advanceTimersByTimeAsync(1000);
++        Events.trigger(player, 'timeupdate');
++        await flush();
++        expect(mocks.getSessions).toHaveBeenCalledTimes(2);
++    });
++
++    it('does not update hidden content but refreshes immediately on reopening', async () => {
++        const pending = deferred();
++        mocks.getSessions.mockReturnValue(pending.promise);
++        panel = new PlayerStats({ player });
++        const initial = content();
++        panel.enabled(false);
++        pending.resolve([session]);
++        await flush();
++        expect(content()).toBe(initial);
++        panel.enabled(true);
++        expect(content()).toContain('DirectPlaying');
++        expect(content()).toContain('1920x1080');
++        expect(mocks.getSessions).toHaveBeenCalledTimes(1);
++    });
++
++    it('ignores pending results after destruction and removes event listeners', async () => {
++        const pending = deferred();
++        mocks.getSessions.mockReturnValue(pending.promise);
++        panel = new PlayerStats({ player });
++        await flush();
++        panel.enabled(true);
++        panel.destroy();
++        pending.resolve([session]);
++        await flush();
++        await vi.advanceTimersByTimeAsync(11000);
++        Events.trigger(player, 'timeupdate');
++        await flush();
++        expect(content()).toBeUndefined();
++        expect(mocks.getSessions).toHaveBeenCalledTimes(1);
++        expect(player.getStats).toHaveBeenCalledTimes(1);
++    });
++
++    it('discards late statistics from the previous playback session', async () => {
++        const previous = deferred();
++        mocks.getSessions.mockReturnValueOnce(previous.promise).mockReturnValue(deferred().promise);
++        panel = new PlayerStats({ player });
++        await flush();
++        playbackManager.playSessionId.mockReturnValue('next-play-session');
++        playbackManager.currentMediaSource.mockReturnValue({
++            Id: 'next-source', Container: 'mkv', MediaStreams: [{ Type: 'Video', Codec: 'hevc' }]
++        });
++        Events.trigger(player, 'timeupdate');
++        expect(content()).toContain('HEVC');
++        expect(content()).not.toContain('H264');
++        previous.resolve([session]);
++        await flush();
++        expect(content()).not.toContain('DirectPlaying');
++        expect(mocks.getSessions).toHaveBeenCalledTimes(2);
++    });
++
++    it('does not display a server session that belongs to another item', async () => {
++        mocks.getSessions.mockResolvedValue([{ ...session, NowPlayingItem: { Id: 'other-item' } }]);
++        panel = new PlayerStats({ player });
++        await flush();
++        expect(content()).not.toContain('DirectPlaying');
++        expect(content()).toContain('H264');
++    });
++    it('does not rebuild the DOM when a refresh has identical information', async () => {
++        panel = new PlayerStats({ player });
++        await flush();
++        const changes = vi.fn();
++        const observer = new MutationObserver(changes);
++        observer.observe(document.querySelector('.playerStats-stats'), { childList: true });
++        await vi.advanceTimersByTimeAsync(800);
++        Events.trigger(player, 'timeupdate');
++        await flush();
++        observer.disconnect();
++        expect(changes).not.toHaveBeenCalled();
++    });
++});

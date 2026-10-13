@@ -83,11 +83,6 @@ namespace MediaBrowser.Providers.MediaInfo
                 return Task.FromResult(false);
             }
 
-            if (!video.IsCompleteMedia)
-            {
-                return Task.FromResult(false);
-            }
-
             VideoContentType mediaType;
 
             if (video is Episode)

@@ -21,12 +21,10 @@ using Jellyfin.Extensions;
 using Jellyfin.Extensions.Json;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
@@ -45,7 +43,6 @@ namespace Emby.Server.Implementations.Library
         // Do not use a pipe here because Roku http requests to the server will fail, without any explicit error message.
         private const char LiveStreamIdDelimiter = '_';
 
-        private readonly IServerApplicationHost _appHost;
         private readonly IItemRepository _itemRepo;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
@@ -65,7 +62,6 @@ namespace Emby.Server.Implementations.Library
         private IMediaSourceProvider[] _providers;
 
         public MediaSourceManager(
-            IServerApplicationHost appHost,
             IItemRepository itemRepo,
             IApplicationPaths applicationPaths,
             ILocalizationManager localizationManager,
@@ -79,7 +75,6 @@ namespace Emby.Server.Implementations.Library
             IMediaStreamRepository mediaStreamRepository,
             IMediaAttachmentRepository mediaAttachmentRepository)
         {
-            _appHost = appHost;
             _itemRepo = itemRepo;
             _userManager = userManager;
             _libraryManager = libraryManager;
@@ -676,7 +671,6 @@ namespace Emby.Server.Implementations.Library
                 }
                 else
                 {
-                    // hack - these two values were taken from LiveTVMediaSourceProvider
                     string cacheKey = request.OpenToken;
 
                     await new LiveStreamHelper(_mediaEncoder, _logger, _appPaths)
@@ -686,7 +680,7 @@ namespace Emby.Server.Implementations.Library
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error probing live tv stream");
+                _logger.LogError(ex, "Error probing media stream");
                 AddMediaInfo(mediaSource);
             }
 
@@ -976,32 +970,6 @@ namespace Emby.Server.Implementations.Library
         {
             var result = await GetLiveStreamWithDirectStreamProvider(id, cancellationToken).ConfigureAwait(false);
             return result.Item1;
-        }
-
-        public async Task<IReadOnlyList<MediaSourceInfo>> GetRecordingStreamMediaSources(ActiveRecordingInfo info, CancellationToken cancellationToken)
-        {
-            var stream = new MediaSourceInfo
-            {
-                EncoderPath = _appHost.GetApiUrlForLocalAccess() + "/LiveTv/LiveRecordings/" + info.Id + "/stream",
-                EncoderProtocol = MediaProtocol.Http,
-                Path = info.Path,
-                Protocol = MediaProtocol.File,
-                Id = info.Id,
-                SupportsDirectPlay = false,
-                SupportsDirectStream = true,
-                SupportsTranscoding = true,
-                IsInfiniteStream = true,
-                RequiresOpening = false,
-                RequiresClosing = false,
-                BufferMs = 0,
-                IgnoreDts = true,
-                IgnoreIndex = true
-            };
-
-            await new LiveStreamHelper(_mediaEncoder, _logger, _appPaths)
-                .AddMediaInfoWithProbe(stream, false, false, cancellationToken).ConfigureAwait(false);
-
-            return [stream];
         }
 
         public async Task CloseLiveStream(string id)

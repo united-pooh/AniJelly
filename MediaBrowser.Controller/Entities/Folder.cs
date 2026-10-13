@@ -17,7 +17,6 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Extensions;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
@@ -172,16 +171,6 @@ namespace MediaBrowser.Controller.Entities
                 }
 
                 if (this is UserRootFolder)
-                {
-                    return false;
-                }
-
-                if (this is Channel)
-                {
-                    return false;
-                }
-
-                if (SourceType != SourceType.Library)
                 {
                     return false;
                 }
@@ -1105,23 +1094,6 @@ namespace MediaBrowser.Controller.Entities
 
         protected virtual QueryResult<BaseItem> GetItemsInternal(InternalItemsQuery query)
         {
-            if (SourceType == SourceType.Channel)
-            {
-                try
-                {
-                    query.Parent = this;
-                    query.ChannelIds = new[] { ChannelId };
-
-                    // Don't blow up here because it could cause parent screens with other content to fail
-                    return ChannelManager.GetChannelItemsInternal(query, new Progress<double>(), CancellationToken.None).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    // Already logged at lower levels
-                    return new QueryResult<BaseItem>();
-                }
-            }
-
             if (query.Recursive)
             {
                 return QueryRecursive(query);

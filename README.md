@@ -52,6 +52,15 @@ Check out our <a href="https://translate.jellyfin.org">Weblate instance</a> to h
 
 This repository contains the code for Jellyfin's backend server. Note that this is only one of many projects under the Jellyfin GitHub [organization](https://github.com/jellyfin/) on GitHub. If you want to contribute, you can start by checking out our [documentation](https://jellyfin.org/docs/general/contributing/index.html) to see what to work on.
 
+### 中文开发者文档
+
+- [开发者功能手册](docs/开发者功能手册.md)：当前源码的功能范围、模块职责、调用链、配置与扩展点。
+- [API 功能入口索引](docs/API功能入口索引.md)：完整控制器路由清单及源码定位。
+- [弃用接口迁移说明](docs/弃用接口迁移说明.md)：已删除接口、当前替代入口及不兼容差异。
+- [电视直播、DVR 与频道插件移除说明](docs/电视直播与录像机移除说明.md)
+- [手册核验记录](docs/手册核验记录.md)：覆盖范围、独立复核与验证限制。
+- [Docker 启动说明](docs/Docker启动说明.md)：构建当前源码、运行含 Web 的本机服务及数据管理。
+
 ## Server Development
 
 These instructions will help you get set up with a local development environment in order to contribute to this repository. Before you start, please be sure to completely read our [guidelines on development contributions](https://jellyfin.org/docs/general/contributing/development.html). Note that this project is supported on all major operating systems except FreeBSD, which is still incompatible.
@@ -78,10 +87,9 @@ The server is configured to host the static files required for the [web client](
 
 Note that it is recommended for development to [host the web client separately](#hosting-the-web-client-separately) from the web server with some additional configuration, in which case you can skip this step.
 
-There are two options to get the files for the web client.
+This checkout removes obsolete server APIs. Apply the [pinned Web compatibility patch](docker/Web兼容说明.md) before building the client; an unmodified pre-built client still calls removed routes. The [Docker build](docs/Docker启动说明.md) applies this compatibility patch and the [Cinema visual theme](docker/Cinema主题说明.md) automatically.
 
-1. Build them from source following the instructions on the [jellyfin-web repository](https://github.com/jellyfin/jellyfin-web)
-2. Get the pre-built files from an existing installation of the server. For example, with a Windows server installation the client files are located at `C:\Program Files\Jellyfin\Server\jellyfin-web`
+For a manual installation, build the pinned Web source with this repository's patches as described in the compatibility notes, then point the server at its `dist` directory using `--webdir`.
 
 ### Running The Server
 

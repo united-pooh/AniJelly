@@ -1,5 +1,4 @@
 {
-    "HeaderLiveTV": "Televisio",
     "NewVersionIsAvailable": "Uusi versio Jellyfin-palvelimesta on ladattavissa.",
     "NameSeasonUnknown": "Tuntematon kausi",
     "NameSeasonNumber": "Kausi {0}",
@@ -65,8 +64,6 @@
     "TasksMaintenanceCategory": "Ylläpito",
     "TaskDownloadMissingSubtitlesDescription": "Etsii puuttuvia tekstityksiä määritettyjen metatietoasetusten mukaisesti.",
     "TaskDownloadMissingSubtitles": "Lataa puuttuvat tekstitykset",
-    "TaskRefreshChannelsDescription": "Päivittää internet-kanavien tiedot.",
-    "TaskRefreshChannels": "Päivitä kanavat",
     "TaskCleanTranscodeDescription": "Poistaa päivää vanhemmat transkoodaustiedostot.",
     "TaskCleanTranscode": "Puhdista transkoodauskansio",
     "TaskUpdatePluginsDescription": "Lataa ja asentaa päivitykset lisäosille, jotka on määritetty päivittymään automaattisesti.",
@@ -81,7 +78,6 @@
     "TaskRefreshChapterImages": "Pura kappalejaon kuvat",
     "TaskCleanCacheDescription": "Poistaa tarpeettomiksi jääneet väliaikaistiedostot.",
     "TaskCleanCache": "Tyhjennä välimuistikansio",
-    "TasksChannelsCategory": "Internet-kanavat",
     "TasksApplicationCategory": "Sovellus",
     "TasksLibraryCategory": "Kirjasto",
     "Forced": "Pakotettu",

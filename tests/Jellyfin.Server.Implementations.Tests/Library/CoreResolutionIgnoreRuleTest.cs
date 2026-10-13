@@ -5,6 +5,8 @@ using Emby.Naming.Video;
 using Emby.Server.Implementations.Library;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Audio;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using Moq;
@@ -63,6 +65,28 @@ public class CoreResolutionIgnoreRuleTest
         Assert.False(_rule.ShouldIgnore(
             MakeFileSystemMetadata("/server/root/small.jpg"),
             null));
+    }
+
+    [Theory]
+    [InlineData("CDs")]
+    [InlineData("cds")]
+    [InlineData("NCOP")]
+    [InlineData("NCED")]
+    public void ShouldIgnore_AnimeResourceDirectory_DoesNotCreateSeason(string folder)
+    {
+        var path = "/Anime/Show/" + folder;
+
+        Assert.True(_rule.ShouldIgnore(MakeFileSystemMetadata(path, true), new Series()));
+        Assert.True(_rule.ShouldIgnore(MakeFileSystemMetadata(path, true), new Season()));
+    }
+
+    [Fact]
+    public void ShouldIgnore_CdDirectoryInMusicLibrary_IsPreserved()
+    {
+        Assert.False(_rule.ShouldIgnore(MakeFileSystemMetadata("/Music/Album/CDs", true), new MusicAlbum()));
+        Assert.False(_rule.ShouldIgnore(MakeFileSystemMetadata("/Media/CDs", true), new AggregateFolder()));
+        Assert.False(_rule.ShouldIgnore(MakeFileSystemMetadata("/Anime/Show/CDs.mkv"), new Series()));
+        Assert.False(_rule.ShouldIgnore(MakeFileSystemMetadata("/Anime/Show/CDs Collection", true), new Series()));
     }
 
     [Fact]

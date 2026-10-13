@@ -88,8 +88,6 @@ public class ServerConfiguration : BaseApplicationConfiguration
     /// <value><c>true</c> if [enable case-sensitive item ids]; otherwise, <c>false</c>.</value>
     public bool EnableCaseSensitiveItemIds { get; set; } = true;
 
-    public bool DisableLiveTvChannelUserDataName { get; set; } = true;
-
     /// <summary>
     /// Gets or sets the metadata path.
     /// </summary>

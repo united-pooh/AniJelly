@@ -87,11 +87,6 @@ public class ChapterManager : IChapterManager
             return false;
         }
 
-        if (!video.IsCompleteMedia)
-        {
-            return false;
-        }
-
         // Can't extract images if there are no video streams
         return video.DefaultVideoStreamIndex.HasValue;
     }

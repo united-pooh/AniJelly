@@ -75,7 +75,6 @@ public class TrickplayImagesTask : IScheduledTask
         var query = new InternalItemsQuery
         {
             MediaTypes = [MediaType.Video],
-            SourceTypes = [SourceType.Library],
             IsVirtualItem = false,
             IsFolder = false,
             Recursive = true,

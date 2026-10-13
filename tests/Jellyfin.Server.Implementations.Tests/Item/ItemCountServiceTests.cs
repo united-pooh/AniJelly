@@ -76,8 +76,7 @@ public sealed class ItemCountServiceTests : IDisposable
             [BaseItemKind.Audio] = "Audio",
             [BaseItemKind.Trailer] = "Trailer",
             [BaseItemKind.BoxSet] = "BoxSet",
-            [BaseItemKind.Book] = "Book",
-            [BaseItemKind.LiveTvProgram] = "LiveTvProgram"
+            [BaseItemKind.Book] = "Book"
         });
 
         _service = new ItemCountService(

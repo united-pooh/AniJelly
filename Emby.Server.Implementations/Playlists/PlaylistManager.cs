@@ -592,8 +592,7 @@ namespace Emby.Server.Implementations.Playlists
                         playlist,
                         new DeleteOptions
                         {
-                            DeleteFileLocation = false,
-                            DeleteFromExternalProvider = false
+                            DeleteFileLocation = false
                         },
                         playlist.GetParent(),
                         false);

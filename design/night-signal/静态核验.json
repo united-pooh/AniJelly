@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-13T01:22:22.620799+00:00",
+  "scope": "Independent static validation of the offline four-screen design prototype; no production deployment, server connection, browser interaction or media decoding.",
+  "status": "passed",
+  "artifact": {
+    "path": "夜航私人影院.html",
+    "bytes": 8818451,
+    "sha256": "c51d02e1af2fa737073dc24716ef379583de72e20fd9e13efab5ea434a255e95"
+  },
+  "checks": [
+    {
+      "id": "pythonSyntax",
+      "status": "passed",
+      "evidence": [
+        "build.py",
+        "sources/subset_fonts.py"
+      ]
+    },
+    {
+      "id": "independentAssemblyEqualsDeliveredHtml",
+      "status": "passed",
+      "evidence": {
+        "rebuiltSha256": "c51d02e1af2fa737073dc24716ef379583de72e20fd9e13efab5ea434a255e95",
+        "deliveredSha256": "c51d02e1af2fa737073dc24716ef379583de72e20fd9e13efab5ea434a255e95",
+        "outputRedirectedToTemporaryDirectory": true
+      }
+    },
+    {
+      "id": "allCurrentPartsEmbedded",
+      "status": "passed",
+      "evidence": {
+        "allCssInOrder": true,
+        "allJsInOrder": true,
+        "allMarkupInOrder": true,
+        "scriptCount": 2,
+        "styleCount": 1
+      }
+    },
+    {
+      "id": "javascriptSyntax",
+      "status": "passed",
+      "evidence": [
+        {
+          "file": "parts/gallery.js",
+          "passed": true,
+          "bytes": 25781
+        },
+        {
+          "file": "parts/login.js",
+          "passed": true,
+          "bytes": 10061
+        },
+        {
+          "file": "parts/player.js",
+          "passed": true,
+          "bytes": 12281
+        },
+        {
+          "file": "inline-script-1",
+          "passed": true,
+          "bytes": 8085587
+        },
+        {
+          "file": "inline-script-2",
+          "passed": true,
+          "bytes": 48125
+        }
+      ]
+    },
+    {
+      "id": "cssSyntaxAndSelectors",
+      "status": "passed",
+      "evidence": [
+        {
+          "file": "parts/gallery.css",
+          "passed": true,
+          "rules": 337,
+          "declarations": 1099
+        },
+        {
+          "file": "parts/login.css",
+          "passed": true,
+          "rules": 88,
+          "declarations": 314
+        },
+        {
+          "file": "parts/player.css",
+          "passed": true,
+          "rules": 85,
+          "declarations": 298
+        },
+        {
+          "file": "inline-style",
+          "passed": true,
+          "rules": 510,
+          "declarations": 1721
+        }
+      ]
+    },
+    {
+      "id": "html5Parse",
+      "status": "passed",
+      "evidence": []
+    },
+    {
+      "id": "uniqueIds",
+      "status": "passed",
+      "evidence": {
+        "count": 56,
+        "duplicates": []
+      }
+    },
+    {
+      "id": "explicitLabelsAndControlNames",
+      "status": "passed",
+      "evidence": {
+        "labelErrors": [],
+        "unnamedControls": [],
+        "hiddenFileInput": "Programmatically opened by the named replace-poster button; excluded from the unnamed-control check."
+      }
+    },
+    {
+      "id": "ariaIdReferences",
+      "status": "passed",
+      "evidence": []
+    },
+    {
+      "id": "imageAlternativeText",
+      "status": "passed",
+      "evidence": {
+        "missingAlt": [],
+        "decorativeImageHasEmptyAlt": true
+      }
+    },
+    {
+      "id": "documentMetadata",
+      "status": "passed",
+      "evidence": {
+        "lang": "zh-CN",
+        "title": "夜航 · NIGHT SIGNAL — 私人放映室"
+      }
+    },
+    {
+      "id": "noExternalRuntimeResourceReferences",
+      "status": "passed",
+      "evidence": {
+        "externalReferences": [],
+        "networkApiReferences": [],
+        "reviewedDynamicSources": "NIGHT_ART data URIs and user-selected images via FileReader.readAsDataURL; Web Audio oscillators/noise are synthesized locally. License URLs and the SVG XML namespace are text metadata, not requests."
+      }
+    },
+    {
+      "id": "embeddedPngImagesDecodeAndMatch",
+      "status": "passed",
+      "evidence": [
+        {
+          "key": "hero",
+          "file": "assets/blue-hour-radio.png",
+          "bytes": 2586905,
+          "dimensions": [
+            1672,
+            941
+          ],
+          "mode": "RGB",
+          "format": "PNG",
+          "sha256": "275cc5ce9642c7a634b57c653d873988201b4b94595ec568e4d20970ef2a3280",
+          "matchesSource": true
+        },
+        {
+          "key": "atlas",
+          "file": "assets/poster-atlas.png",
+          "bytes": 3477219,
+          "dimensions": [
+            1254,
+            1254
+          ],
+          "mode": "RGB",
+          "format": "PNG",
+          "sha256": "53209e9d064bc283dbb13815f636a3a805f217f21ac667510f26b9ba4e13577b",
+          "matchesSource": true
+        }
+      ]
+    },
+    {
+      "id": "embeddedWoff2DecodeNamesWeightsAndCurrentCjkCoverage",
+      "status": "passed",
+      "evidence": [
+        {
+          "file": "assets/night-cjk-regular.woff2",
+          "bytes": 227900,
+          "sha256": "d0bbd5c0fe4d899d181e9270fe3203fa1e85eb5e41ac4230cb717ea0a444d922",
+          "weight": 400,
+          "family": "Night Signal CJK",
+          "postScriptName": "NightSignalCJK-Regular",
+          "glyphCount": 1654,
+          "cmapCodepointCount": 739,
+          "missingCjk": [],
+          "missingSourceSymbols": [
+            "⟶"
+          ],
+          "fontFaceExcludesAscii": true,
+          "valid": true
+        },
+        {
+          "file": "assets/night-cjk-bold.woff2",
+          "bytes": 233520,
+          "sha256": "7e87662865ff5c8d871c2a30adcbe26f593f577aba3e014bd25e5b9d794b67ea",
+          "weight": 700,
+          "family": "Night Signal CJK",
+          "postScriptName": "NightSignalCJK-Bold",
+          "glyphCount": 1654,
+          "cmapCodepointCount": 739,
+          "missingCjk": [],
+          "missingSourceSymbols": [
+            "⟶"
+          ],
+          "fontFaceExcludesAscii": true,
+          "valid": true
+        }
+      ]
+    },
+    {
+      "id": "completeEmbeddedOflAndCopyright",
+      "status": "passed",
+      "evidence": {
+        "completeVerbatim": true,
+        "copyright": true,
+        "modifiedFontDisclosure": true,
+        "licenseSha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+      }
+    },
+    {
+      "id": "fontManifestMatchesCurrentInputs",
+      "status": "passed",
+      "evidence": {
+        "inputFiles": [
+          {
+            "path": "parts/gallery.html",
+            "sha256": "3aa9e3de76ac0bb47596f7ba3920f920062550daa5e47d0b888a66e36056f49a"
+          },
+          {
+            "path": "parts/gallery.js",
+            "sha256": "bb1a72515d5e4b19119b5ddeabd4c4602be4c16edabf94e7e0fc594520c8362d"
+          },
+          {
+            "path": "parts/login.html",
+            "sha256": "db6394c26ee33334ecabdc5ee5804d545d4cb6b80127ddb5e7486c8885df6851"
+          },
+          {
+            "path": "parts/login.js",
+            "sha256": "968d9157bfc98669b2b106ddd56c3dea2f0c4ce6f1cab9ee91231a34360d9c6d"
+          },
+          {
+            "path": "parts/player.html",
+            "sha256": "83bf70889137d7df89e501e8f05684229f2126ad5a936f99f99c7e40c2cdfa70"
+          },
+          {
+            "path": "parts/player.js",
+            "sha256": "49fe04767cfea87780cbdd0fc48d12c8c45d9b0f000c2d5e6febcc52907477ec"
+          }
+        ],
+        "requestedCodepoints": 740,
+        "sourceFontHashes": [
+          {
+            "file": "NotoSansMonoCJKsc-Regular.otf",
+            "sha256": "ec04cc376b34887cedbdf84074e2e226ed2761eeabdcb9173fc1dd7bfd153ef7",
+            "sourceUnchangedDuringGeneration": true
+          },
+          {
+            "file": "NotoSansMonoCJKsc-Bold.otf",
+            "sha256": "a452fedfc0619e43e080b7b861ce34cbd3ec4fbcea495bf8c402a5a02a5dcbdc",
+            "sourceUnchangedDuringGeneration": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "portableFontSubsetHelper",
+      "status": "passed",
+      "evidence": {
+        "file": "sources/subset_fonts.py",
+        "dependencies": [
+          "fontTools with WOFF2 support",
+          "Brotli"
+        ],
+        "sourceFonts": "User supplies original Noto Sans Mono CJK SC 2.004 Regular and Bold OTF files. Original fonts are not changed or bundled."
+      }
+    },
+    {
+      "id": "retiredLoginTicketTapeAndOsdReferencesRemoved",
+      "status": "passed",
+      "evidence": {
+        "sourceMatches": [],
+        "artifactMatches": [],
+        "scope": "HTML/CSS/JS parts and built HTML excluding embedded binary data; historical docs/evidence are not deletion targets."
+      }
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "parts/gallery.css",
+      "sha256": "8dcbb1ebfbc5b974f373a1760d02c6e6c8037cd7a471d5be9b14406fd45b205b"
+    },
+    {
+      "path": "parts/gallery.html",
+      "sha256": "3aa9e3de76ac0bb47596f7ba3920f920062550daa5e47d0b888a66e36056f49a"
+    },
+    {
+      "path": "parts/gallery.js",
+      "sha256": "bb1a72515d5e4b19119b5ddeabd4c4602be4c16edabf94e7e0fc594520c8362d"
+    },
+    {
+      "path": "parts/login.css",
+      "sha256": "9e0d3057be266a18ee2f0862d33f8f19ac3f9bcea3b64302a6fb3cfface3992e"
+    },
+    {
+      "path": "parts/login.html",
+      "sha256": "db6394c26ee33334ecabdc5ee5804d545d4cb6b80127ddb5e7486c8885df6851"
+    },
+    {
+      "path": "parts/login.js",
+      "sha256": "968d9157bfc98669b2b106ddd56c3dea2f0c4ce6f1cab9ee91231a34360d9c6d"
+    },
+    {
+      "path": "parts/player.css",
+      "sha256": "511ebaa0f5628737ef2262f58234880e55ebed6a5cdefaa4277fd82c59c01d2e"
+    },
+    {
+      "path": "parts/player.html",
+      "sha256": "83bf70889137d7df89e501e8f05684229f2126ad5a936f99f99c7e40c2cdfa70"
+    },
+    {
+      "path": "parts/player.js",
+      "sha256": "49fe04767cfea87780cbdd0fc48d12c8c45d9b0f000c2d5e6febcc52907477ec"
+    },
+    {
+      "path": "build.py",
+      "sha256": "14eab0932445ade332e5a26f6589f8bdea21be8dc317d79da6bae886f2107fe7"
+    },
+    {
+      "path": "sources/subset_fonts.py",
+      "sha256": "f811ae76ac22ebb6a1a20afc6b40f45a6a574c639b6adb4b4984f8983d5368d1"
+    }
+  ],
+  "tools": {
+    "jsdom": "29.1.1",
+    "acorn": "8.16.0",
+    "postcss": "8.5.23",
+    "python": "3.12.12",
+    "fontTools": "4.62.1",
+    "Pillow": "12.1.1"
+  },
+  "resolvedFindings": [],
+  "limitations": [
+    "Static syntax, structure and accessible-name checks do not certify full WCAG compliance, contrast, focus behavior, responsiveness or assistive-technology operation. Browser checks belong to the parent task.",
+    "Source-font-missing symbols use system fallback: ⟶. The embedded subset only claims the checked Chinese copy; Latin/ASCII is deliberately excluded by font-face unicode-range.",
+    "Displayed track/version choices, preview playback and login are offline demonstrations. This check does not validate a real media decoder, NAS access, authentication, gamepad hardware or synchronized playback."
+  ]
+}

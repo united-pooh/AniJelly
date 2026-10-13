@@ -608,7 +608,7 @@ internal class MigrateLinkedChildren : IDatabaseMigrationRoutine
             return 0;
         }
 
-        var options = new DeleteOptions { DeleteFileLocation = false, DeleteFromExternalProvider = false };
+        var options = new DeleteOptions { DeleteFileLocation = false };
         var deleted = 0;
         var processed = 0;
         foreach (var item in items)

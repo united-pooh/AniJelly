@@ -485,7 +485,7 @@ namespace Jellyfin.Server.Implementations.Tests.Localization
 
         [Theory]
         [InlineData("Default", "Default")]
-        [InlineData("HeaderLiveTV", "Live TV")]
+        [InlineData("HeaderNextUp", "Next Up")]
         public void GetLocalizedString_Valid_Success(string key, string expected)
         {
             var localizationManager = Setup(new ServerConfiguration()

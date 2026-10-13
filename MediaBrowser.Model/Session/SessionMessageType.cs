@@ -22,11 +22,8 @@ namespace MediaBrowser.Model.Session
         LibraryChanged,
         UserDeleted,
         UserUpdated,
-        SeriesTimerCreated,
-        TimerCreated,
-        SeriesTimerCancelled,
-        TimerCancelled,
-        RefreshProgress,
+        // Values 14-17 belonged to retired DVR notifications.
+        RefreshProgress = 18,
         ScheduledTaskEnded,
         PackageInstallationCancelled,
         PackageInstallationFailed,

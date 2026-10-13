@@ -6,7 +6,6 @@ using Jellyfin.Database.Implementations;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Persistence;
@@ -262,6 +261,6 @@ public sealed partial class BaseItemRepository
             entity,
             _logger,
             _appHost,
-            skipDeserialization || (_serverConfigurationManager.Configuration.SkipDeserializationForBasicTypes && (typeToSerialise == typeof(Channel) || typeToSerialise == typeof(UserRootFolder))));
+            skipDeserialization || (_serverConfigurationManager.Configuration.SkipDeserializationForBasicTypes && typeToSerialise == typeof(UserRootFolder)));
     }
 }

@@ -8,7 +8,6 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
@@ -71,7 +70,6 @@ public sealed class ResolveAlternateVersionTests : IDisposable
         BaseItem.FileSystem ??= fixture.Create<IFileSystem>();
         BaseItem.MediaSegmentManager ??= fixture.Create<IMediaSegmentManager>();
         BaseItem.ConfigurationManager ??= fixture.Create<IServerConfigurationManager>();
-        Video.RecordingsManager ??= fixture.Create<IRecordingsManager>();
 
         var primary = new Movie
         {

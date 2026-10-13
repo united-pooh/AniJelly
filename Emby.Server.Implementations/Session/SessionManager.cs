@@ -1929,10 +1929,7 @@ namespace Emby.Server.Implementations.Session
 
             if (_itemInfoDtoOptions is null)
             {
-                dtoOptions = new DtoOptions
-                {
-                    AddProgramRecordingInfo = false
-                };
+                dtoOptions = new DtoOptions();
 
                 var fields = dtoOptions.Fields.ToList();
 

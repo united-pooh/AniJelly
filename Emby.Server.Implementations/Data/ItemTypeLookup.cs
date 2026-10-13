@@ -2,12 +2,10 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using Emby.Server.Implementations.Playlists;
 using Jellyfin.Data.Enums;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Playlists;
 
@@ -33,14 +31,15 @@ public class ItemTypeLookup : IItemTypeLookup
         { BaseItemKind.BasePluginFolder, typeof(BasePluginFolder).FullName! },
         { BaseItemKind.Book, typeof(Book).FullName! },
         { BaseItemKind.BoxSet, typeof(BoxSet).FullName! },
-        { BaseItemKind.Channel, typeof(Channel).FullName! },
+        { BaseItemKind.Channel, "MediaBrowser.Controller.Channels.Channel" },
         { BaseItemKind.CollectionFolder, typeof(CollectionFolder).FullName! },
         { BaseItemKind.Episode, typeof(Episode).FullName! },
         { BaseItemKind.Folder, typeof(Folder).FullName! },
         { BaseItemKind.Genre, typeof(Genre).FullName! },
         { BaseItemKind.Movie, typeof(Movie).FullName! },
-        { BaseItemKind.LiveTvChannel, typeof(LiveTvChannel).FullName! },
-        { BaseItemKind.LiveTvProgram, typeof(LiveTvProgram).FullName! },
+        // Preserve retired query aliases without loading their removed entity types.
+        { BaseItemKind.LiveTvChannel, "MediaBrowser.Controller.LiveTv.LiveTvChannel" },
+        { BaseItemKind.LiveTvProgram, "MediaBrowser.Controller.LiveTv.LiveTvProgram" },
         { BaseItemKind.MusicAlbum, typeof(MusicAlbum).FullName! },
         { BaseItemKind.MusicArtist, typeof(MusicArtist).FullName! },
         { BaseItemKind.MusicGenre, typeof(MusicGenre).FullName! },
@@ -54,8 +53,8 @@ public class ItemTypeLookup : IItemTypeLookup
         { BaseItemKind.Series, typeof(Series).FullName! },
         { BaseItemKind.Studio, typeof(Studio).FullName! },
         { BaseItemKind.Trailer, typeof(Trailer).FullName! },
-        { BaseItemKind.TvChannel, typeof(LiveTvChannel).FullName! },
-        { BaseItemKind.TvProgram, typeof(LiveTvProgram).FullName! },
+        { BaseItemKind.TvChannel, "MediaBrowser.Controller.LiveTv.LiveTvChannel" },
+        { BaseItemKind.TvProgram, "MediaBrowser.Controller.LiveTv.LiveTvProgram" },
         { BaseItemKind.UserRootFolder, typeof(UserRootFolder).FullName! },
         { BaseItemKind.UserView, typeof(UserView).FullName! },
         { BaseItemKind.Video, typeof(Video).FullName! },

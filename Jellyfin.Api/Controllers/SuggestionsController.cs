@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using Jellyfin.Api.Extensions;
 using Jellyfin.Api.Helpers;
 using Jellyfin.Api.ModelBinders;
@@ -99,28 +98,4 @@ public class SuggestionsController : BaseJellyfinApiController
             result.TotalRecordCount,
             dtoList);
     }
-
-    /// <summary>
-    /// Gets suggestions.
-    /// </summary>
-    /// <param name="userId">The user id.</param>
-    /// <param name="mediaType">The media types.</param>
-    /// <param name="type">The type.</param>
-    /// <param name="startIndex">Optional. The start index.</param>
-    /// <param name="limit">Optional. The limit.</param>
-    /// <param name="enableTotalRecordCount">Whether to enable the total record count.</param>
-    /// <response code="200">Suggestions returned.</response>
-    /// <returns>A <see cref="QueryResult{BaseItemDto}"/> with the suggestions.</returns>
-    [HttpGet("Users/{userId}/Suggestions")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [Obsolete("Kept for backwards compatibility")]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    public ActionResult<QueryResult<BaseItemDto>> GetSuggestionsLegacy(
-        [FromRoute, Required] Guid userId,
-        [FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] MediaType[] mediaType,
-        [FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] BaseItemKind[] type,
-        [FromQuery] int? startIndex,
-        [FromQuery] int? limit,
-        [FromQuery] bool enableTotalRecordCount = false)
-        => GetSuggestions(userId, mediaType, type, startIndex, limit, enableTotalRecordCount);
 }

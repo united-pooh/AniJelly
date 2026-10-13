@@ -1,0 +1,443 @@
+diff --git a/src/apps/wizard/controllers/remote/index.js b/src/apps/wizard/controllers/remote/index.js
+index 7b35e2c..37ffc65 100644
+--- a/src/apps/wizard/controllers/remote/index.js
++++ b/src/apps/wizard/controllers/remote/index.js
+@@ -9,15 +9,14 @@ import 'elements/emby-select/emby-select';
+ function save(page) {
+     loading.show();
+     const apiClient = ServerConnections.currentApiClient();
+-    const config = {
+-        EnableRemoteAccess: page.querySelector('#chkRemoteAccess').checked
+-    };
+-
+-    apiClient.ajax({
+-        type: 'POST',
+-        data: JSON.stringify(config),
+-        url: apiClient.getUrl('Startup/RemoteAccess'),
+-        contentType: 'application/json'
++    apiClient.getJSON(apiClient.getUrl('System/Configuration/network')).then(config => {
++        config.EnableRemoteAccess = page.querySelector('#chkRemoteAccess').checked;
++        return apiClient.ajax({
++            type: 'POST',
++            data: JSON.stringify(config),
++            url: apiClient.getUrl('System/Configuration/network'),
++            contentType: 'application/json'
++        });
+     }).then(function () {
+         loading.hide();
+         navigateToNextPage();
+diff --git a/src/apps/wizard/controllers/settings/index.js b/src/apps/wizard/controllers/settings/index.js
+index 765530a..c23c3fc 100644
+--- a/src/apps/wizard/controllers/settings/index.js
++++ b/src/apps/wizard/controllers/settings/index.js
+@@ -9,13 +9,13 @@ import 'elements/emby-select/emby-select';
+ function save(page) {
+     loading.show();
+     const apiClient = ServerConnections.currentApiClient();
+-    apiClient.getJSON(apiClient.getUrl('Startup/Configuration')).then(function (config) {
++    apiClient.getJSON(apiClient.getUrl('System/Configuration')).then(function (config) {
+         config.PreferredMetadataLanguage = page.querySelector('#selectLanguage').value;
+         config.MetadataCountryCode = page.querySelector('#selectCountry').value;
+         apiClient.ajax({
+             type: 'POST',
+             data: JSON.stringify(config),
+-            url: apiClient.getUrl('Startup/Configuration'),
++            url: apiClient.getUrl('System/Configuration'),
+             contentType: 'application/json'
+         }).then(function () {
+             loading.hide();
+@@ -59,7 +59,7 @@ function reloadData(page, config, cultures, countries) {
+ function reload(page) {
+     loading.show();
+     const apiClient = ServerConnections.currentApiClient();
+-    const promise1 = apiClient.getJSON(apiClient.getUrl('Startup/Configuration'));
++    const promise1 = apiClient.getJSON(apiClient.getUrl('System/Configuration'));
+     const promise2 = apiClient.getCultures();
+     const promise3 = apiClient.getCountries();
+     Promise.all([promise1, promise2, promise3]).then(function (responses) {
+diff --git a/src/apps/wizard/controllers/start/index.js b/src/apps/wizard/controllers/start/index.js
+index 8d9b6cc..f9b96af 100644
+--- a/src/apps/wizard/controllers/start/index.js
++++ b/src/apps/wizard/controllers/start/index.js
+@@ -22,17 +22,17 @@ function loadPage(page, systemInfo, config, languageOptions) {
+ function save(page) {
+     loading.show();
+     const apiClient = ServerConnections.currentApiClient();
+-    apiClient.getJSON(apiClient.getUrl('Startup/Configuration')).then(function (config) {
++    apiClient.getJSON(apiClient.getUrl('System/Configuration')).then(function (config) {
+         config.ServerName = page.querySelector('#txtServerName').value;
+         config.UICulture = page.querySelector('#selectLocalizationLanguage').value;
+ 
+         apiClient.ajax({
+             type: 'POST',
+             data: JSON.stringify(config),
+-            url: apiClient.getUrl('Startup/Configuration'),
++            url: apiClient.getUrl('System/Configuration'),
+             contentType: 'application/json'
+         }).then(function () {
+-            Dashboard.navigate('wizard/user');
++            Dashboard.navigate('wizard/library');
+         });
+     });
+ }
+@@ -51,9 +51,15 @@ export default function (view) {
+         const page = this;
+         const apiClient = ServerConnections.currentApiClient();
+ 
++        if (!apiClient.accessToken()) {
++            loading.hide();
++            Dashboard.navigate('wizard/user');
++            return;
++        }
++
+         Promise.all([
+             apiClient.getPublicSystemInfo(),
+-            apiClient.getJSON(apiClient.getUrl('Startup/Configuration')),
++            apiClient.getJSON(apiClient.getUrl('System/Configuration')),
+             apiClient.getJSON(apiClient.getUrl('Localization/Options'))
+         ]).then(([ systemInfo, config, languageOptions ]) => {
+             loadPage(page, systemInfo, config, languageOptions);
+diff --git a/src/apps/wizard/controllers/user/index.js b/src/apps/wizard/controllers/user/index.js
+index a925575..4d11320 100644
+--- a/src/apps/wizard/controllers/user/index.js
++++ b/src/apps/wizard/controllers/user/index.js
+@@ -8,22 +8,8 @@ import 'styles/dashboard.scss';
+ import 'elements/emby-input/emby-input';
+ import 'elements/emby-button/emby-button';
+ 
+-function nextWizardPage() {
+-    Dashboard.navigate('wizard/library')
+-        .catch(err => {
+-            console.error('[Wizard > User] error navigating to library setup', err);
+-        });
+-}
+-
+-function onUpdateUserComplete(result) {
+-    console.debug('[Wizard > User] user update complete:', result);
+-    loading.hide();
+-    nextWizardPage();
+-}
+-
+-async function onUpdateUserError(result) {
+-    const message = await result.text();
+-    console.warn('[Wizard > User] user update failed:', message);
++function onUpdateUserError(result) {
++    console.warn('[Wizard > User] user setup failed with status:', result?.status);
+     toast(globalize.translate('ErrorDefault'));
+     loading.hide();
+ }
+@@ -31,17 +17,30 @@ async function onUpdateUserError(result) {
+ function submit(form) {
+     loading.show();
+     const apiClient = ServerConnections.currentApiClient();
++    const name = form.querySelector('#txtUsername').value.trim();
++    const password = form.querySelector('#txtManualPassword').value;
+     apiClient
+         .ajax({
+             type: 'POST',
+             data: JSON.stringify({
+-                Name: form.querySelector('#txtUsername').value.trim(),
+-                Password: form.querySelector('#txtManualPassword').value
++                Name: name,
++                Password: password
+             }),
+             url: apiClient.getUrl('Startup/User'),
+             contentType: 'application/json'
+         })
+-        .then(onUpdateUserComplete)
++        .catch(error => {
++            // An interrupted wizard may already have created the administrator.
++            if (error?.status !== 403) throw error;
++        })
++        .then(() => apiClient.authenticateUserByName(name, password))
++        .then(result => {
++            Dashboard.onServerChanged(result.User.Id, result.AccessToken, apiClient);
++            form.querySelector('#txtManualPassword').value = '';
++            form.querySelector('#txtPasswordConfirm').value = '';
++            loading.hide();
++            return Dashboard.navigate('wizard/start');
++        })
+         .catch(onUpdateUserError);
+ }
+ 
+@@ -58,24 +57,13 @@ function onSubmit(e) {
+     return false;
+ }
+ 
+-function onViewShow() {
+-    loading.show();
+-    const page = this;
+-    const apiClient = ServerConnections.currentApiClient();
+-    apiClient.getJSON(apiClient.getUrl('Startup/User')).then(function (user) {
+-        page.querySelector('#txtUsername').value = user.Name || '';
+-        page.querySelector('#txtManualPassword').value = user.Password || '';
+-        loading.hide();
+-    });
+-}
+-
+ export default function (view) {
+     view.querySelector('.wizardUserForm').addEventListener('submit', onSubmit);
+     view.addEventListener('viewshow', function () {
+         document.querySelector('.skinHeader').classList.add('noHomeButtonHeader');
++        loading.hide();
+     });
+     view.addEventListener('viewhide', function () {
+         document.querySelector('.skinHeader').classList.remove('noHomeButtonHeader');
+     });
+-    view.addEventListener('viewshow', onViewShow);
+ }
+diff --git a/src/apps/wizard/controllers/wizard.test.js b/src/apps/wizard/controllers/wizard.test.js
+new file mode 100644
+index 0000000..ccef82f
+--- /dev/null
++++ b/src/apps/wizard/controllers/wizard.test.js
+@@ -0,0 +1,92 @@
++import { beforeEach, expect, it, vi } from 'vitest';
++
++const mocks = vi.hoisted(() => ({ client: {}, navigate: vi.fn(), onServerChanged: vi.fn() }));
++vi.mock('lib/jellyfin-apiclient', () => ({ ServerConnections: { currentApiClient: () => mocks.client } }));
++vi.mock('utils/dashboard', () => ({ default: { navigate: mocks.navigate, onServerChanged: mocks.onServerChanged } }));
++vi.mock('components/loading/loading', () => ({ default: { show: vi.fn(), hide: vi.fn() } }));
++vi.mock('components/toast/toast', () => ({ default: vi.fn() }));
++vi.mock('lib/globalize', () => ({ default: { translate: key => key } }));
++vi.mock('utils/dom', () => ({ default: { parentWithClass: element => element.parentElement } }));
++vi.mock('elements/emby-button/emby-button', () => ({}));
++vi.mock('elements/emby-input/emby-input', () => ({}));
++vi.mock('elements/emby-select/emby-select', () => ({}));
++vi.mock('elements/emby-checkbox/emby-checkbox', () => ({}));
++
++import start from './start';
++import user from './user';
++import remote from './remote';
++
++beforeEach(() => {
++    vi.clearAllMocks();
++    mocks.navigate.mockResolvedValue(undefined);
++    mocks.client = {
++        getUrl: path => path,
++        accessToken: () => '',
++        getJSON: vi.fn().mockResolvedValue({}),
++        ajax: vi.fn().mockResolvedValue(undefined),
++        getPublicSystemInfo: vi.fn().mockResolvedValue({ ServerName: 'Server' }),
++        authenticateUserByName: vi.fn().mockResolvedValue({ User: { Id: 'admin' }, AccessToken: 'token' })
++    };
++    document.body.innerHTML = '<div class="skinHeader"></div><div class="page"></div>';
++});
++
++function show(controller, html) {
++    const view = document.querySelector('.page');
++    view.innerHTML = html;
++    controller(view);
++    view.dispatchEvent(new Event('viewshow'));
++    return view;
++}
++
++const userForm = '<form class="wizardUserForm"><input id="txtUsername" value="admin" /><input id="txtManualPassword" value="password" /><input id="txtPasswordConfirm" value="password" /></form>';
++
++it('requires administrator authentication before loading full server configuration', async () => {
++    show(start, '<form class="wizardStartForm"></form>');
++    await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('wizard/user'));
++    expect(mocks.client.getJSON).not.toHaveBeenCalled();
++});
++
++it('creates and authenticates the administrator before returning to server configuration', async () => {
++    const view = show(user, userForm);
++    expect(mocks.client.getJSON).not.toHaveBeenCalled();
++    view.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
++    await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('wizard/start'));
++    expect(mocks.client.ajax).toHaveBeenCalledWith(expect.objectContaining({ url: 'Startup/User', type: 'POST' }));
++    expect(mocks.client.authenticateUserByName).toHaveBeenCalledWith('admin', 'password');
++    expect(mocks.onServerChanged).toHaveBeenCalledWith('admin', 'token', mocks.client);
++});
++
++it('can resume interrupted setup with an existing administrator password', async () => {
++    mocks.client.ajax.mockRejectedValue({ status: 403 });
++    const view = show(user, userForm);
++    view.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
++    await vi.waitFor(() => expect(mocks.client.authenticateUserByName).toHaveBeenCalledWith('admin', 'password'));
++    expect(mocks.navigate).toHaveBeenCalledWith('wizard/start');
++});
++
++it('preserves the full network configuration when updating remote access', async () => {
++    const config = { EnableRemoteAccess: false, InternalHttpPort: 8096, KnownProxies: ['proxy.internal'] };
++    mocks.client.getJSON.mockResolvedValue(config);
++    const view = show(remote, '<form class="wizardSettingsForm"><input id="chkRemoteAccess" type="checkbox" /></form>');
++    view.querySelector('#chkRemoteAccess').checked = true;
++    view.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
++    await vi.waitFor(() => expect(mocks.client.ajax).toHaveBeenCalled());
++    const request = mocks.client.ajax.mock.calls[0][0];
++    expect(request.url).toBe('System/Configuration/network');
++    expect(JSON.parse(request.data)).toEqual({ ...config, EnableRemoteAccess: true });
++});
++
++it('preserves unrelated server configuration fields when saving the welcome page', async () => {
++    const config = { ServerName: 'Before', UICulture: 'en-US', EnableMetrics: true, MetadataOptions: [{ ItemType: 'Movie' }] };
++    mocks.client.accessToken = () => 'token';
++    mocks.client.getJSON.mockImplementation(path => Promise.resolve(path === 'Localization/Options' ? [{ Name: 'English', Value: 'en-US' }] : config));
++    const view = show(start, '<form class="wizardStartForm"><input id="txtServerName" /><select id="selectLocalizationLanguage"></select></form>');
++    await vi.waitFor(() => expect(view.querySelector('#txtServerName').value).toBe('Before'));
++    view.querySelector('#txtServerName').value = 'After';
++    view.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
++    await vi.waitFor(() => expect(mocks.client.ajax).toHaveBeenCalled());
++    const request = mocks.client.ajax.mock.calls[0][0];
++    expect(request.url).toBe('System/Configuration');
++    expect(JSON.parse(request.data)).toEqual({ ...config, ServerName: 'After' });
++    expect(mocks.navigate).toHaveBeenCalledWith('wizard/library');
++});
+diff --git a/src/components/UserAvatar.tsx b/src/components/UserAvatar.tsx
+index a066d3d..c6b3711 100644
+--- a/src/components/UserAvatar.tsx
++++ b/src/components/UserAvatar.tsx
+@@ -21,7 +21,7 @@ const UserAvatar: FC<UserAvatarProps> = ({
+             alt={user.Name ?? undefined}
+             src={
+                 api && user.Id && user.PrimaryImageTag ?
+-                    `${api.basePath}/Users/${user.Id}/Images/Primary?tag=${user.PrimaryImageTag}` :
++                    `${api.basePath}/UserImage?userId=${encodeURIComponent(user.Id)}&tag=${encodeURIComponent(user.PrimaryImageTag)}` :
+                     undefined
+             }
+             sx={(theme) => ({
+diff --git a/src/utils/jellyfin-apiclient/createApiClient.test.ts b/src/utils/jellyfin-apiclient/createApiClient.test.ts
+new file mode 100644
+index 0000000..3666eea
+--- /dev/null
++++ b/src/utils/jellyfin-apiclient/createApiClient.test.ts
+@@ -0,0 +1,63 @@
++import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
++import { describe, expect, it, vi } from 'vitest';
++
++import { createApiClient } from './createApiClient';
++
++const makeClient = () => createApiClient('http://localhost:8096/base', 'Web', '13', 'Browser', 'device');
++
++describe('current server user routes', () => {
++    it.each([
++        ['Items', 'Items'],
++        ['Items/Resume', 'UserItems/Resume'],
++        ['Items/Latest', 'Items/Latest'],
++        ['Items/Root', 'Items/Root'],
++        ['Items/item', 'Items/item'],
++        ['Items/item/Intros', 'Items/item/Intros'],
++        ['Items/item/LocalTrailers', 'Items/item/LocalTrailers'],
++        ['Items/item/SpecialFeatures', 'Items/item/SpecialFeatures'],
++        ['Items/item/UserData', 'UserItems/item/UserData'],
++        ['Items/item/Rating', 'UserItems/item/Rating'],
++        ['PlayedItems/item', 'UserPlayedItems/item'],
++        ['FavoriteItems/item', 'UserFavoriteItems/item'],
++        ['Views', 'UserViews'],
++        ['GroupingOptions', 'UserViews/GroupingOptions'],
++        ['Suggestions', 'Items/Suggestions'],
++        ['Password', 'Users/Password'],
++        ['Configuration', 'Users/Configuration']
++    ])('moves Users/user/%s to %s and preserves query parameters', (oldPath, newPath) => {
++        const options = { Limit: 12 };
++        const url = new URL(makeClient().getUrl(`Users/user/${oldPath}`, options));
++        expect(url.pathname).toBe(`/base/${newPath}`);
++        expect(url.searchParams.get('userId')).toBe('user');
++        expect(url.searchParams.get('Limit')).toBe('12');
++        expect(options).toEqual({ Limit: 12 });
++    });
++
++    it.each(['Users/user', 'Users/user/Policy', 'Users/AuthenticateByName', 'Artists/item/InstantMix', 'Items/item/Images/Primary'])('preserves the active route %s', path => {
++        expect(makeClient().getUrl(path)).toBe(`http://localhost:8096/base/${path}`);
++    });
++
++    it('preserves GET and DELETE user while moving only updateUser to POST Users', async () => {
++        const client = makeClient();
++        const request = vi.spyOn(client, 'ajax').mockResolvedValue(undefined);
++        const user = { Id: 'user', Name: 'Administrator' };
++        await client.updateUser(user);
++        expect(request).toHaveBeenCalledWith(expect.objectContaining({
++            type: 'POST', url: 'http://localhost:8096/base/Users?userId=user', data: JSON.stringify(user)
++        }));
++        await client.deleteUser('user');
++        expect(request).toHaveBeenLastCalledWith({ type: 'DELETE', url: 'http://localhost:8096/base/Users/user' });
++    });
++
++    it('uses the same current route for display and indexed deletion of a user avatar', async () => {
++        const client = makeClient();
++        const url = new URL(client.getUserImageUrl('user', { type: ImageType.Primary, index: 0, tag: 'cache', format: 'png', width: 80 }));
++        expect(url.pathname).toBe('/base/UserImage');
++        expect(url.searchParams.get('userId')).toBe('user');
++        expect(url.searchParams.get('tag')).toBe('cache');
++        expect(url.searchParams.get('format')).toBe('png');
++        const request = vi.spyOn(client, 'ajax').mockResolvedValue(undefined);
++        await client.deleteUserImage('user', ImageType.Primary, 0);
++        expect(request).toHaveBeenCalledWith({ type: 'DELETE', url: 'http://localhost:8096/base/UserImage?userId=user' });
++    });
++});
+diff --git a/src/utils/jellyfin-apiclient/createApiClient.ts b/src/utils/jellyfin-apiclient/createApiClient.ts
+index d5c2fb8..8a529af 100644
+--- a/src/utils/jellyfin-apiclient/createApiClient.ts
++++ b/src/utils/jellyfin-apiclient/createApiClient.ts
+@@ -1,6 +1,7 @@
+ import { ApiClient } from 'jellyfin-apiclient';
+ 
+ import { safeDecodeURIComponent } from 'utils/url';
++import { useModernUserRoutes } from './modernUserRoutes';
+ 
+ /**
+  * Encodes a value for use as a parameter when creating the ApiClient.
+@@ -17,11 +18,11 @@ export function createApiClient(
+     deviceName: string,
+     deviceId: string
+ ) {
+-    return new ApiClient(
++    return useModernUserRoutes(new ApiClient(
+         serverUrl,
+         encodeParam(appName),
+         encodeParam(appVersion),
+         encodeParam(deviceName),
+         encodeParam(deviceId)
+-    );
++    ));
+ }
+diff --git a/src/utils/jellyfin-apiclient/modernUserRoutes.ts b/src/utils/jellyfin-apiclient/modernUserRoutes.ts
+new file mode 100644
+index 0000000..bf0dfba
+--- /dev/null
++++ b/src/utils/jellyfin-apiclient/modernUserRoutes.ts
+@@ -0,0 +1,43 @@
++import type { ApiClient } from 'jellyfin-apiclient';
++
++function getUserRoute(path: string): string | undefined {
++    switch (path) {
++        case 'Items/Resume': return 'UserItems/Resume';
++        case 'Views': return 'UserViews';
++        case 'GroupingOptions': return 'UserViews/GroupingOptions';
++        case 'Suggestions': return 'Items/Suggestions';
++        case 'Password': return 'Users/Password';
++        case 'Configuration': return 'Users/Configuration';
++    }
++
++    if (/^Items\/[^/]+\/(UserData|Rating)$/.test(path)) return `User${path}`;
++    if (/^(PlayedItems|FavoriteItems)\/[^/]+$/.test(path)) return `User${path}`;
++    if (/^Items(?:\/[^/]+(?:\/(Intros|LocalTrailers|SpecialFeatures))?)?$/.test(path)) return path;
++    if (/^Images\/[^/]+(?:\/\d+)?$/.test(path)) return 'UserImage';
++    return undefined;
++}
++
++export function useModernUserRoutes(client: ApiClient): ApiClient {
++    const getUrl = client.getUrl.bind(client);
++    client.getUrl = (name, params, serverAddress) => {
++        const match = /^\/?Users\/([^/]+)\/(.+)$/.exec(name);
++        const path = match && getUserRoute(match[2]);
++        return path ? getUrl(path, { ...params, userId: match[1] }, serverAddress) : getUrl(name, params, serverAddress);
++    };
++
++    // GET and DELETE Users/{id} remain valid; only the update action moved.
++    client.updateUser = user => client.ajax({
++        type: 'POST',
++        url: getUrl('Users', { userId: user.Id }),
++        data: JSON.stringify(user),
++        contentType: 'application/json'
++    });
++
++    // The old client appends the optional image index after getUrl returns.
++    client.deleteUserImage = userId => client.ajax({
++        type: 'DELETE',
++        url: getUrl('UserImage', { userId })
++    });
++
++    return client;
++}

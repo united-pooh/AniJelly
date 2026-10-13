@@ -14,7 +14,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Search;
 using Microsoft.AspNetCore.Authorization;
@@ -147,7 +146,6 @@ public class SearchController : BaseJellyfinApiController
             MatchedTerm = hintInfo.MatchedTerm,
             RunTimeTicks = item.RunTimeTicks,
             ProductionYear = item.ProductionYear,
-            ChannelId = item.ChannelId,
             EndDate = item.EndDate
         };
 
@@ -176,9 +174,6 @@ public class SearchController : BaseJellyfinApiController
         {
             case IHasSeries hasSeries:
                 result.Series = hasSeries.SeriesName;
-                break;
-            case LiveTvProgram program:
-                result.StartDate = program.StartDate;
                 break;
             case Series series:
                 if (series.Status.HasValue)
@@ -210,11 +205,6 @@ public class SearchController : BaseJellyfinApiController
                 break;
         }
 
-        if (!item.ChannelId.IsEmpty())
-        {
-            var channel = _libraryManager.GetItemById<BaseItem>(item.ChannelId);
-            result.ChannelName = channel?.Name;
-        }
 
         return result;
     }

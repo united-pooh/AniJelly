@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Jellyfin.Api.Models.StartupDtos;
 using Jellyfin.Api.Models.UserDtos;
@@ -22,8 +21,13 @@ namespace Jellyfin.Server.Integration.Tests
         public static async Task<string> CompleteStartupAsync(HttpClient client)
         {
             var jsonOptions = JsonDefaults.Options;
-            var userResponse = await client.GetByteArrayAsync("/Startup/User");
-            var user = JsonSerializer.Deserialize<StartupUserDto>(userResponse, jsonOptions);
+            var user = new StartupUserDto
+            {
+                Name = "TestAdministrator",
+                Password = "TestAdministratorPassword"
+            };
+            using var userResponse = await client.PostAsJsonAsync("/Startup/User", user, jsonOptions);
+            Assert.Equal(HttpStatusCode.NoContent, userResponse.StatusCode);
 
             using var completeResponse = await client.PostAsync("/Startup/Complete", new ByteArrayContent(Array.Empty<byte>()));
             Assert.Equal(HttpStatusCode.NoContent, completeResponse.StatusCode);
@@ -33,7 +37,7 @@ namespace Jellyfin.Server.Integration.Tests
             httpRequest.Content = JsonContent.Create(
                 new AuthenticateUserByName()
                 {
-                    Username = user!.Name,
+                    Username = user.Name,
                     Pw = user.Password,
                 },
                 options: jsonOptions);
@@ -63,7 +67,7 @@ namespace Jellyfin.Server.Integration.Tests
                 userId = userDto.Id;
             }
 
-            var response = await client.GetAsync($"Users/{userId}/Items/Root");
+            using var response = await client.GetAsync($"Items/Root?userId={userId}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var rootDto = await response.Content.ReadFromJsonAsync<BaseItemDto>(JsonDefaults.Options);
             Assert.NotNull(rootDto);

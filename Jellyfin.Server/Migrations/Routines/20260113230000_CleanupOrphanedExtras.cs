@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,14 +6,8 @@ using Jellyfin.Database.Implementations;
 using Jellyfin.Server.Implementations.Item;
 using Jellyfin.Server.Migrations.Stages;
 using Jellyfin.Server.ServerSetupApp;
-using MediaBrowser.Controller.Channels;
-using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
-using MediaBrowser.Controller.MediaSegments;
-using MediaBrowser.Controller.Persistence;
-using MediaBrowser.Model.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -58,6 +51,7 @@ public class CleanupOrphanedExtras : IAsyncMigrationRoutine
 #pragma warning disable RS0030 // Do not use banned APIs
             var orphanedItemIds = await context.BaseItems
                 .Where(b => b.OwnerId.HasValue && b.OwnerId == placeholderOwner)
+                .Where(b => b.ChannelId == null || b.ChannelId == Guid.Empty)
                 .Select(b => new
                 {
                     b.Id,
@@ -74,12 +68,12 @@ public class CleanupOrphanedExtras : IAsyncMigrationRoutine
                 return;
             }
 
-            _logger.LogInformation("Found {Count} orphaned extras to remove", orphanedItemIds.Count);
+            _logger.LogInformation("Found {Count} orphaned extras to process", orphanedItemIds.Count);
 
             // Resolve items for metadata path cleanup, then delete in batches so we never issue one
             // massive delete transaction and progress stays visible on large libraries.
-            _logger.LogInformation("Deleting {Count} orphaned extras...", orphanedItemIds.Count);
             const int deleteBatchSize = 500;
+            var processedSoFar = 0;
             var deletedSoFar = 0;
             for (var offset = 0; offset < orphanedItemIds.Count; offset += deleteBatchSize)
             {
@@ -96,16 +90,21 @@ public class CleanupOrphanedExtras : IAsyncMigrationRoutine
                         },
                         _logger,
                         null,
-                        true)!)
+                        true))
+                    .OfType<BaseItem>()
                     .ToList();
 
-                _libraryManager.DeleteItemsUnsafeFast(itemsToDelete);
+                if (itemsToDelete.Count > 0)
+                {
+                    _libraryManager.DeleteItemsUnsafeFast(itemsToDelete);
+                }
 
-                deletedSoFar += batch.Count;
-                _logger.LogInformation("Deleting orphaned extras: {Deleted}/{Total}", deletedSoFar, orphanedItemIds.Count);
+                processedSoFar += batch.Count;
+                deletedSoFar += itemsToDelete.Count;
+                _logger.LogInformation("Processed orphaned extras: {Processed}/{Total}; deleted {Deleted}", processedSoFar, orphanedItemIds.Count, deletedSoFar);
             }
 
-            _logger.LogInformation("Successfully removed {Count} orphaned extras", orphanedItemIds.Count);
+            _logger.LogInformation("Removed {Deleted} orphaned extras; preserved {Unresolved} unresolved items", deletedSoFar, processedSoFar - deletedSoFar);
         }
     }
 }

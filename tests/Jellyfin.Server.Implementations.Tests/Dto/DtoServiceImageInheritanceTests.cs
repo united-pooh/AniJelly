@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Trickplay;
 using MediaBrowser.Model.Entities;
@@ -298,10 +297,8 @@ public class DtoServiceImageInheritanceTests
         var userDataManager = new Mock<IUserDataManager>();
         var imageProcessor = new Mock<IImageProcessor>();
         var providerManager = new Mock<IProviderManager>();
-        var recordingsManager = new Mock<IRecordingsManager>();
         var appHost = new Mock<IApplicationHost>();
         var mediaSourceManager = new Mock<IMediaSourceManager>();
-        var liveTvManager = new Mock<ILiveTvManager>();
         var trickplayManager = new Mock<ITrickplayManager>();
         var chapterManager = new Mock<IChapterManager>();
         var logger = new Mock<Microsoft.Extensions.Logging.ILogger<DtoService>>();
@@ -310,8 +307,6 @@ public class DtoServiceImageInheritanceTests
             .Setup(x => x.GetImageCacheTag(It.IsAny<BaseItem>(), It.IsAny<ItemImageInfo>()))
             .Returns<BaseItem, ItemImageInfo>((_, image) => image.Path);
 
-        // Video.IsActiveRecording() dereferences this static during DTO building.
-        Video.RecordingsManager = recordingsManager.Object;
         BaseItem.LibraryManager = libraryManager.Object;
 
         return new DtoService(
@@ -320,10 +315,8 @@ public class DtoServiceImageInheritanceTests
             userDataManager.Object,
             imageProcessor.Object,
             providerManager.Object,
-            recordingsManager.Object,
             appHost.Object,
             mediaSourceManager.Object,
-            new Lazy<ILiveTvManager>(() => liveTvManager.Object),
             trickplayManager.Object,
             chapterManager.Object);
     }

@@ -1,9 +1,7 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Jellyfin.Api.Models.StartupDtos;
 using MediaBrowser.Common.Api;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
@@ -47,81 +45,6 @@ public class StartupController : BaseJellyfinApiController
     }
 
     /// <summary>
-    /// Gets the initial startup wizard configuration.
-    /// </summary>
-    /// <response code="200">Initial startup wizard configuration retrieved.</response>
-    /// <returns>An <see cref="OkResult"/> containing the initial startup wizard configuration.</returns>
-    [HttpGet("Configuration")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [Obsolete("Use configuration endpoints")]
-    public ActionResult<StartupConfigurationDto> GetStartupConfiguration()
-    {
-        return new StartupConfigurationDto
-        {
-            ServerName = _config.Configuration.ServerName,
-            UICulture = _config.Configuration.UICulture,
-            MetadataCountryCode = _config.Configuration.MetadataCountryCode,
-            PreferredMetadataLanguage = _config.Configuration.PreferredMetadataLanguage
-        };
-    }
-
-    /// <summary>
-    /// Sets the initial startup wizard configuration.
-    /// </summary>
-    /// <param name="startupConfiguration">The updated startup configuration.</param>
-    /// <response code="204">Configuration saved.</response>
-    /// <returns>A <see cref="NoContentResult"/> indicating success.</returns>
-    [HttpPost("Configuration")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [Obsolete("Use configuration endpoints")]
-    public ActionResult UpdateInitialConfiguration([FromBody, Required] StartupConfigurationDto startupConfiguration)
-    {
-        _config.Configuration.ServerName = startupConfiguration.ServerName ?? string.Empty;
-        _config.Configuration.UICulture = startupConfiguration.UICulture ?? string.Empty;
-        _config.Configuration.MetadataCountryCode = startupConfiguration.MetadataCountryCode ?? string.Empty;
-        _config.Configuration.PreferredMetadataLanguage = startupConfiguration.PreferredMetadataLanguage ?? string.Empty;
-        _config.SaveConfiguration();
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Sets remote access and UPnP.
-    /// </summary>
-    /// <param name="startupRemoteAccessDto">The startup remote access dto.</param>
-    /// <response code="204">Configuration saved.</response>
-    /// <returns>A <see cref="NoContentResult"/> indicating success.</returns>
-    [HttpPost("RemoteAccess")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [Obsolete("Use configuration endpoints")]
-    public ActionResult SetRemoteAccess([FromBody, Required] StartupRemoteAccessDto startupRemoteAccessDto)
-    {
-        NetworkConfiguration settings = _config.GetNetworkConfiguration();
-        settings.EnableRemoteAccess = startupRemoteAccessDto.EnableRemoteAccess;
-        _config.SaveConfiguration(NetworkConfigurationStore.StoreKey, settings);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Gets the first user.
-    /// </summary>
-    /// <response code="200">Initial user retrieved.</response>
-    /// <returns>The first user.</returns>
-    [HttpGet("User")]
-    [HttpGet("FirstUser", Name = "GetFirstUser_2")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [Obsolete("Use authentication endpoints")]
-    public async Task<StartupUserDto> GetFirstUser()
-    {
-        // TODO: Remove this method when startup wizard no longer requires an existing user.
-        await _userManager.InitializeAsync().ConfigureAwait(false);
-        var user = _userManager.GetFirstUser() ?? throw new InvalidOperationException("No user exists after initialization.");
-        return new StartupUserDto
-        {
-            Name = user.Username
-        };
-    }
-
-    /// <summary>
     /// Sets the user name and password.
     /// </summary>
     /// <param name="startupUserDto">The DTO containing username and password.</param>
@@ -134,6 +57,7 @@ public class StartupController : BaseJellyfinApiController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult> UpdateStartupUser([FromBody] StartupUserDto startupUserDto)
     {
+        await _userManager.InitializeAsync().ConfigureAwait(false);
         var user = _userManager.GetFirstUser();
         if (user is null)
         {
@@ -159,10 +83,7 @@ public class StartupController : BaseJellyfinApiController
         }
 #pragma warning restore CA1309 // Use ordinal string comparison
 
-        if (!string.IsNullOrEmpty(startupUserDto.Password))
-        {
-            await _userManager.ChangePassword(user.Id, startupUserDto.Password).ConfigureAwait(false);
-        }
+        await _userManager.ChangePassword(user.Id, startupUserDto.Password).ConfigureAwait(false);
 
         return NoContent();
     }

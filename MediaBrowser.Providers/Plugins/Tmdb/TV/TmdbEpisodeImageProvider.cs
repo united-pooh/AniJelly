@@ -61,10 +61,9 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
                 return Enumerable.Empty<RemoteImageInfo>();
             }
 
-            var seasonNumber = episode.ParentIndexNumber ?? 1;
             var episodeNumber = episode.IndexNumber;
 
-            if (!episodeNumber.HasValue)
+            if (episode.ParentIndexNumber is not int seasonNumber || seasonNumber < 0 || !episodeNumber.HasValue)
             {
                 return Enumerable.Empty<RemoteImageInfo>();
             }

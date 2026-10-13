@@ -1,0 +1,17 @@
+name: anijelly
+
+services:
+  jellyfin:
+    image: anijelly:local
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:8096:8096"
+    volumes:
+      - config:/config
+      - cache:/cache
+    restart: unless-stopped
+
+volumes:
+  config:
+  cache:

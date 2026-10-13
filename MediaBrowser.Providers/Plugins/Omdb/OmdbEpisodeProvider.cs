@@ -57,12 +57,14 @@ namespace MediaBrowser.Providers.Plugins.Omdb
 
             if (info.SeriesProviderIds.TryGetValue(MetadataProvider.Imdb.ToString(), out string? seriesImdbId)
                 && !string.IsNullOrEmpty(seriesImdbId)
-                && info.IndexNumber.HasValue)
+                && info.IndexNumber.HasValue
+                && info.ParentIndexNumber is int seasonNumber
+                && seasonNumber >= 0)
             {
                 result.HasMetadata = await _omdbProvider.FetchEpisodeData(
                     result,
                     info.IndexNumber.Value,
-                    info.ParentIndexNumber ?? 1,
+                    seasonNumber,
                     info.GetProviderId(MetadataProvider.Imdb),
                     seriesImdbId,
                     info.MetadataLanguage,

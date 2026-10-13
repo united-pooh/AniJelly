@@ -77,12 +77,6 @@ namespace Emby.Server.Implementations.Library.Resolvers.TV
                     episode.SeasonName = season.Name;
                 }
 
-                // Assume season 1 if there's no season folder and a season number could not be determined
-                if (season is null && !episode.ParentIndexNumber.HasValue && (episode.IndexNumber.HasValue || episode.PremiereDate.HasValue))
-                {
-                    episode.ParentIndexNumber = 1;
-                }
-
                 SetProviderIdFromPath(episode, args.Path);
 
                 return episode;

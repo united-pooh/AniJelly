@@ -65,8 +65,7 @@ public class FilterController : BaseJellyfinApiController
 
         BaseItem? item = null;
         if (includeItemTypes.Length != 1
-            || !(includeItemTypes[0] == BaseItemKind.Trailer
-                 || includeItemTypes[0] == BaseItemKind.Program))
+            || includeItemTypes[0] != BaseItemKind.Trailer)
         {
             item = _libraryManager.GetParentItem(parentId, user?.Id);
         }
@@ -100,7 +99,6 @@ public class FilterController : BaseJellyfinApiController
     /// <param name="userId">Optional. User id.</param>
     /// <param name="parentId">Optional. Specify this to localize the search to a specific item or folder. Omit to use the root.</param>
     /// <param name="includeItemTypes">Optional. If specified, results will be filtered based on item type. This allows multiple, comma delimited.</param>
-    /// <param name="isAiring">Optional. Is item airing.</param>
     /// <param name="isMovie">Optional. Is item movie.</param>
     /// <param name="isSports">Optional. Is item sports.</param>
     /// <param name="isKids">Optional. Is item kids.</param>
@@ -115,7 +113,6 @@ public class FilterController : BaseJellyfinApiController
         [FromQuery] Guid? userId,
         [FromQuery] Guid? parentId,
         [FromQuery, ModelBinder(typeof(CommaDelimitedCollectionModelBinder))] BaseItemKind[] includeItemTypes,
-        [FromQuery] bool? isAiring,
         [FromQuery] bool? isMovie,
         [FromQuery] bool? isSports,
         [FromQuery] bool? isKids,
@@ -130,8 +127,7 @@ public class FilterController : BaseJellyfinApiController
 
         BaseItem? parentItem = null;
         if (includeItemTypes.Length == 1
-            && (includeItemTypes[0] == BaseItemKind.Trailer
-                || includeItemTypes[0] == BaseItemKind.Program))
+            && includeItemTypes[0] == BaseItemKind.Trailer)
         {
             parentItem = null;
         }
@@ -150,7 +146,6 @@ public class FilterController : BaseJellyfinApiController
                 EnableImages = false,
                 EnableUserData = false
             },
-            IsAiring = isAiring,
             IsMovie = isMovie,
             IsSports = isSports,
             IsKids = isKids,
@@ -170,7 +165,6 @@ public class FilterController : BaseJellyfinApiController
                 EnableImages = false,
                 EnableUserData = false
             },
-            IsAiring = isAiring,
             IsMovie = isMovie,
             IsSports = isSports,
             IsKids = isKids,
@@ -187,7 +181,6 @@ public class FilterController : BaseJellyfinApiController
                 EnableImages = false,
                 EnableUserData = false
             },
-            IsAiring = isAiring,
             IsMovie = isMovie,
             IsSports = isSports,
             IsKids = isKids,

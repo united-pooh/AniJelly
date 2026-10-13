@@ -87,8 +87,7 @@ public class LinkedChildrenService : ILinkedChildrenService
         var cleanNames = artistNames.Select(n => (Original: n, Clean: n.GetCleanValue())).ToArray();
         var cleanValues = cleanNames.Select(x => x.Clean).ToArray();
 
-        var artists = dbContext.BaseItems
-            .AsNoTracking()
+        var artists = BaseItemRepository.ExcludeRetiredItems(dbContext.BaseItems.AsNoTracking())
             .Where(e => e.Type == _itemTypeLookup.BaseItemKindNames[BaseItemKind.MusicArtist]!)
             .Where(e => cleanValues.Contains(e.CleanName))
             .ToArray();

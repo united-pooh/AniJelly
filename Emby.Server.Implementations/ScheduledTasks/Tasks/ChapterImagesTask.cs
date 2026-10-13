@@ -91,7 +91,6 @@ public class ChapterImagesTask : IScheduledTask
             {
                 EnableImages = false
             },
-            SourceTypes = [SourceType.Library],
             IsVirtualItem = false,
             IncludeOwnedItems = true
         })

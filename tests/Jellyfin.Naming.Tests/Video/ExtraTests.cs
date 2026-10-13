@@ -11,6 +11,43 @@ namespace Jellyfin.Naming.Tests.Video
     {
         private readonly NamingOptions _videoOptions = new NamingOptions();
 
+        [Theory]
+        [InlineData("/Anime/Show/NCOP/01.mkv")]
+        [InlineData("/Anime/Show/NCED/01.mkv")]
+        [InlineData("/Anime/Show/NCOP01.mkv")]
+        [InlineData("/Anime/Show/nced02v2.mkv")]
+        [InlineData("/Anime/Show/[Group] Show [NCOP1] [1080p].mkv")]
+        [InlineData("/Anime/Show/特典/作品NCED.mkv")]
+        [InlineData("/Anime/Show/SPs/Show S00E01 - NCOP.mkv")]
+        [InlineData("/Anime/Show/Season 01/Show S01E01 - NCED.mkv")]
+        public void GetExtraInfo_CreditlessVideo_IsClip(string path)
+        {
+            Test(path, ExtraType.Clip);
+        }
+
+        [Theory]
+        [InlineData("/Anime/Show/Show S01E01.mkv")]
+        [InlineData("/Anime/Show/SPs/Show S00E01.mkv")]
+        [InlineData("/Anime/Show/特典/01.mkv")]
+        [InlineData("/Anime/Show/Syncope - 01.mkv")]
+        [InlineData("/Anime/Show/NCOpening.mkv")]
+        [InlineData("/Anime/Show/NCEDition.mkv")]
+        [InlineData("/Anime/Show/NCOP.flac")]
+        [InlineData("/Anime/Show/NCED.mp3")]
+        public void GetExtraInfo_WithoutCreditlessVideoMarker_IsNotClip(string path)
+        {
+            Test(path, null);
+        }
+
+        [Theory]
+        [InlineData("NCOP")]
+        [InlineData("NCED")]
+        public void GetExtraInfo_LibraryNamedAfterCreditlessVideo_IsNotClip(string folder)
+        {
+            var libraryRoot = "/media/" + folder;
+            TestWithLibraryRoot(libraryRoot + "/Show S01E01.mkv", libraryRoot, null);
+        }
+
         // Requirements
         // movie-deleted = ExtraType deletedscene
 

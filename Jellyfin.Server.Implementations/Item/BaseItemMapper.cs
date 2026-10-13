@@ -14,7 +14,6 @@ using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.TV;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.LiveTv;
 using Microsoft.Extensions.Logging;
@@ -107,15 +106,12 @@ public static class BaseItemMapper
         dto.LUFS = entity.LUFS;
         dto.NormalizationGain = entity.NormalizationGain;
         dto.IsVirtualItem = entity.IsVirtualItem;
-        dto.ExternalSeriesId = entity.ExternalSeriesId;
         dto.Tagline = entity.Tagline;
         dto.TotalBitrate = entity.TotalBitrate;
-        dto.ExternalId = entity.ExternalId;
         dto.Size = entity.Size;
         dto.Genres = string.IsNullOrWhiteSpace(entity.Genres) ? [] : entity.Genres.Split('|');
         dto.DateCreated = entity.DateCreated ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
         dto.DateModified = entity.DateModified ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
-        dto.ChannelId = entity.ChannelId ?? Guid.Empty;
         dto.DateLastRefreshed = entity.DateLastRefreshed ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
         dto.DateLastSaved = entity.DateLastSaved ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
         dto.OwnerId = entity.OwnerId ?? Guid.Empty;
@@ -146,19 +142,6 @@ public static class BaseItemMapper
         dto.ProductionLocations = entity.ProductionLocations?.Split('|', StringSplitOptions.RemoveEmptyEntries) ?? [];
         dto.Studios = entity.Studios?.Split('|') ?? [];
         dto.Tags = string.IsNullOrWhiteSpace(entity.Tags) ? [] : entity.Tags.Split('|');
-
-        if (dto is IHasProgramAttributes hasProgramAttributes)
-        {
-            hasProgramAttributes.IsMovie = entity.IsMovie;
-            hasProgramAttributes.IsSeries = entity.IsSeries;
-            hasProgramAttributes.EpisodeTitle = entity.EpisodeTitle;
-            hasProgramAttributes.IsRepeat = entity.IsRepeat;
-        }
-
-        if (dto is LiveTvChannel liveTvChannel)
-        {
-            liveTvChannel.ServiceName = entity.ExternalServiceId;
-        }
 
         if (dto is Trailer trailer)
         {
@@ -208,19 +191,9 @@ public static class BaseItemMapper
             hasAlbumArtists.AlbumArtists = entity.AlbumArtists?.Split('|', StringSplitOptions.RemoveEmptyEntries) ?? [];
         }
 
-        if (dto is LiveTvProgram program)
-        {
-            program.ShowId = entity.ShowId;
-        }
-
         if (entity.Images is not null)
         {
             dto.ImageInfos = entity.Images.Select(e => MapImageFromEntity(e, appHost)).ToArray();
-        }
-
-        if (dto is IHasStartDate hasStartDate)
-        {
-            hasStartDate.StartDate = entity.StartDate.GetValueOrDefault();
         }
 
         // Fields that are present in the DB but are never actually used
@@ -298,15 +271,12 @@ public static class BaseItemMapper
         entity.LUFS = dto.LUFS;
         entity.NormalizationGain = dto.NormalizationGain;
         entity.IsVirtualItem = dto.IsVirtualItem;
-        entity.ExternalSeriesId = dto.ExternalSeriesId;
         entity.Tagline = dto.Tagline;
         entity.TotalBitrate = dto.TotalBitrate;
-        entity.ExternalId = dto.ExternalId;
         entity.Size = dto.Size;
         entity.Genres = string.Join('|', dto.Genres.Distinct(StringComparer.OrdinalIgnoreCase));
         entity.DateCreated = dto.DateCreated == DateTime.MinValue ? null : dto.DateCreated;
         entity.DateModified = dto.DateModified == DateTime.MinValue ? null : dto.DateModified;
-        entity.ChannelId = dto.ChannelId;
         entity.DateLastRefreshed = dto.DateLastRefreshed == DateTime.MinValue ? null : dto.DateLastRefreshed;
         entity.DateLastSaved = dto.DateLastSaved == DateTime.MinValue ? null : dto.DateLastSaved;
         entity.OwnerId = dto.OwnerId == Guid.Empty ? null : dto.OwnerId;
@@ -341,19 +311,6 @@ public static class BaseItemMapper
             })
             .ToArray() : null;
 
-        if (dto is IHasProgramAttributes hasProgramAttributes)
-        {
-            entity.IsMovie = hasProgramAttributes.IsMovie;
-            entity.IsSeries = hasProgramAttributes.IsSeries;
-            entity.EpisodeTitle = hasProgramAttributes.EpisodeTitle;
-            entity.IsRepeat = hasProgramAttributes.IsRepeat;
-        }
-
-        if (dto is LiveTvChannel liveTvChannel)
-        {
-            entity.ExternalServiceId = liveTvChannel.ServiceName;
-        }
-
         if (dto is Video video)
         {
             entity.PrimaryVersionId = video.PrimaryVersionId;
@@ -382,11 +339,6 @@ public static class BaseItemMapper
             entity.AlbumArtists = hasAlbumArtists.AlbumArtists is not null ? string.Join('|', hasAlbumArtists.AlbumArtists.Distinct(StringComparer.OrdinalIgnoreCase)) : null;
         }
 
-        if (dto is LiveTvProgram program)
-        {
-            entity.ShowId = program.ShowId;
-        }
-
         if (dto.ImageInfos is not null)
         {
             entity.Images = dto.ImageInfos.Select(f => MapImageToEntity(dto.Id, f)).ToArray();
@@ -403,11 +355,6 @@ public static class BaseItemMapper
         }
 
         entity.MediaType = dto.MediaType.ToString();
-        if (dto is IHasStartDate hasStartDate)
-        {
-            entity.StartDate = hasStartDate.StartDate;
-        }
-
         entity.UnratedType = dto.GetBlockUnratedType().ToString();
 
         // Fields that are present in the DB but are never actually used

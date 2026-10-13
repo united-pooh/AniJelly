@@ -1,6 +1,5 @@
 using System;
 using Jellyfin.Extensions;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -25,18 +24,6 @@ namespace MediaBrowser.Controller.BaseItemManager
         /// <inheritdoc />
         public bool IsMetadataFetcherEnabled(BaseItem baseItem, TypeOptions? libraryTypeOptions, string name)
         {
-            if (baseItem is Channel)
-            {
-                // Hack alert.
-                return true;
-            }
-
-            if (baseItem.SourceType == SourceType.Channel)
-            {
-                // Hack alert.
-                return !baseItem.EnableMediaSourceDisplay;
-            }
-
             if (libraryTypeOptions is not null)
             {
                 return libraryTypeOptions.MetadataFetchers.Contains(name, StringComparison.OrdinalIgnoreCase);
@@ -49,18 +36,6 @@ namespace MediaBrowser.Controller.BaseItemManager
         /// <inheritdoc />
         public bool IsImageFetcherEnabled(BaseItem baseItem, TypeOptions? libraryTypeOptions, string name)
         {
-            if (baseItem is Channel)
-            {
-                // Hack alert.
-                return true;
-            }
-
-            if (baseItem.SourceType == SourceType.Channel)
-            {
-                // Hack alert.
-                return !baseItem.EnableMediaSourceDisplay;
-            }
-
             if (libraryTypeOptions is not null)
             {
                 return libraryTypeOptions.ImageFetchers.Contains(name, StringComparison.OrdinalIgnoreCase);

@@ -18,6 +18,49 @@ namespace Jellyfin.Server.Implementations.Tests.Library
     {
         private static readonly NamingOptions _namingOptions = new();
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData(0)]
+        [InlineData(2)]
+        public void Resolve_NumberedEpisode_DoesNotInventSeason(int? seasonNumber)
+        {
+            var resolver = new EpisodeResolverMock(Mock.Of<ILogger<EpisodeResolver>>(), _namingOptions, Mock.Of<IDirectoryService>())
+            {
+                EpisodeNumber = 1,
+                SeasonNumber = seasonNumber
+            };
+            var args = new ItemResolveArgs(Mock.Of<IServerApplicationPaths>(), null)
+            {
+                Parent = new Series { Name = "Show" },
+                CollectionType = CollectionType.tvshows,
+                FileInfo = new FileSystemMetadata { FullName = "/Anime/Show/Show - 01.mkv" }
+            };
+
+            var episode = resolver.Resolve(args);
+
+            Assert.NotNull(episode);
+            Assert.Equal(seasonNumber, episode.ParentIndexNumber);
+        }
+
+        [Theory]
+        [InlineData("/Anime/Show/NCOP/01.mkv")]
+        [InlineData("/Anime/Show/NCED/01.mkv")]
+        [InlineData("/Anime/Show/NCOP01.mkv")]
+        [InlineData("/Anime/Show/SPs/Show S00E01 - NCED.mkv")]
+        [InlineData("/Anime/Show/Season 01/Show S01E01 - NCOP.mkv")]
+        public void Resolve_CreditlessVideo_DoesNotResolveToEpisode(string path)
+        {
+            var resolver = new EpisodeResolver(Mock.Of<ILogger<EpisodeResolver>>(), _namingOptions, Mock.Of<IDirectoryService>());
+            var args = new ItemResolveArgs(Mock.Of<IServerApplicationPaths>(), null)
+            {
+                Parent = new Series { Name = "Show", Path = "/Anime/Show" },
+                CollectionType = CollectionType.tvshows,
+                FileInfo = new FileSystemMetadata { FullName = path }
+            };
+
+            Assert.Null(resolver.Resolve(args));
+        }
+
         [Fact]
         public void Resolve_GivenVideoInExtrasFolder_DoesNotResolveToEpisode()
         {
@@ -155,7 +198,15 @@ namespace Jellyfin.Server.Implementations.Tests.Library
             {
             }
 
-            protected override TVideoType ResolveVideo<TVideoType>(ItemResolveArgs args, bool parseName) => new();
+            public int? EpisodeNumber { get; init; }
+
+            public int? SeasonNumber { get; init; }
+
+            protected override TVideoType ResolveVideo<TVideoType>(ItemResolveArgs args, bool parseName) => new()
+            {
+                IndexNumber = EpisodeNumber,
+                ParentIndexNumber = SeasonNumber
+            };
         }
     }
 }

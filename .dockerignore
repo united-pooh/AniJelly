@@ -9,3 +9,15 @@ deployment/*/dist
 deployment/*/pkg-dist
 deployment/collect-dist/
 ci/
+**/bin/
+**/obj/
+**/node_modules/
+**/TestResults/
+**/.env*
+.agent/
+.agents/
+.codex/
+memory/
+docs/
+*.log
+docker/*.md

@@ -5,7 +5,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Lyrics;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Persistence;
@@ -33,7 +32,6 @@ public class ProbeProviderTests
 
         // prep BaseItem and Video for calls made that expect managers
         BaseItem.MediaSourceManager = mediaSourceManager.Object;
-        Video.RecordingsManager = Mock.Of<IRecordingsManager>();
 
         _probeProvider = new ProbeProvider(
             mediaSourceManager.Object,

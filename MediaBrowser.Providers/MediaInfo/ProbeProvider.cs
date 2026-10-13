@@ -194,7 +194,7 @@ namespace MediaBrowser.Providers.MediaInfo
 
             return item switch
             {
-                Video video => !video.IsPlaceHolder && video.IsCompleteMedia,
+                Video video => !video.IsPlaceHolder,
                 Audio => true,
                 _ => false
             };
@@ -305,11 +305,6 @@ namespace MediaBrowser.Providers.MediaInfo
             where T : Video
         {
             if (item.IsPlaceHolder)
-            {
-                return _cachedTask;
-            }
-
-            if (!item.IsCompleteMedia)
             {
                 return _cachedTask;
             }

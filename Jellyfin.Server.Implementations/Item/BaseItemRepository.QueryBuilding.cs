@@ -23,6 +23,15 @@ namespace Jellyfin.Server.Implementations.Item;
 
 public sealed partial class BaseItemRepository
 {
+    internal static IQueryable<BaseItemEntity> ExcludeRetiredItems(IQueryable<BaseItemEntity> query)
+    {
+        // Keep old rows on disk while excluding both retired types and plugin-owned media.
+        return query.Where(e => (e.ChannelId == null || e.ChannelId == Guid.Empty)
+            && e.Type != "MediaBrowser.Controller.Channels.Channel"
+            && e.Type != "MediaBrowser.Controller.LiveTv.LiveTvChannel"
+            && e.Type != "MediaBrowser.Controller.LiveTv.LiveTvProgram");
+    }
+
     /// <inheritdoc />
     public IQueryable<BaseItemEntity> PrepareItemQuery(JellyfinDbContext context, InternalItemsQuery filter)
     {
@@ -461,6 +470,7 @@ public sealed partial class BaseItemRepository
         IQueryable<BaseItemEntity> baseQuery,
         InternalItemsQuery filter)
     {
+        baseQuery = ExcludeRetiredItems(baseQuery);
         baseQuery = ApplyTopParentFiltering(context, baseQuery, filter);
 
         baseQuery = ApplyParentalRestrictions(context, baseQuery, filter);

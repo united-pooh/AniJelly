@@ -40,7 +40,6 @@ namespace MediaBrowser.Controller.Dto
             ImageTypeLimit = int.MaxValue;
             EnableImages = true;
             EnableUserData = true;
-            AddCurrentProgram = true;
 
             Fields = allFields ? AllItemFields : [];
             ImageTypes = AllImageTypes;
@@ -81,19 +80,9 @@ namespace MediaBrowser.Controller.Dto
         public bool EnableImages { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether program recording information is populated.
-        /// </summary>
-        public bool AddProgramRecordingInfo { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether user data is populated.
         /// </summary>
         public bool EnableUserData { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the currently airing program is populated.
-        /// </summary>
-        public bool AddCurrentProgram { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether the specified field is populated.

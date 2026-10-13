@@ -30,12 +30,6 @@ namespace MediaBrowser.Model.Users
             EnableVideoPlaybackTranscoding = true;
             EnablePlaybackRemuxing = true;
             ForceRemoteSourceTranscoding = false;
-            EnableLiveTvManagement = true;
-            EnableLiveTvAccess = true;
-
-            // Without this on by default, admins won't be able to do this
-            // Improve in the future
-            EnableLiveTvManagement = true;
 
             EnableSharedDeviceControl = true;
 
@@ -52,8 +46,6 @@ namespace MediaBrowser.Model.Users
             MaxActiveSessions = 0;
             MaxParentalRating = null;
 
-            EnableAllChannels = true;
-            EnabledChannels = Array.Empty<Guid>();
 
             EnableAllFolders = true;
             EnabledFolders = Array.Empty<Guid>();
@@ -129,10 +121,6 @@ namespace MediaBrowser.Model.Users
 
         public bool EnableRemoteAccess { get; set; }
 
-        public bool EnableLiveTvManagement { get; set; }
-
-        public bool EnableLiveTvAccess { get; set; }
-
         public bool EnableMediaPlayback { get; set; }
 
         public bool EnableAudioPlaybackTranscoding { get; set; }
@@ -161,10 +149,6 @@ namespace MediaBrowser.Model.Users
 
         public bool EnableAllDevices { get; set; }
 
-        public Guid[] EnabledChannels { get; set; }
-
-        public bool EnableAllChannels { get; set; }
-
         public Guid[] EnabledFolders { get; set; }
 
         public bool EnableAllFolders { get; set; }
@@ -178,8 +162,6 @@ namespace MediaBrowser.Model.Users
         public bool EnablePublicSharing { get; set; }
 
         public Guid[] BlockedMediaFolders { get; set; }
-
-        public Guid[] BlockedChannels { get; set; }
 
         public int RemoteClientBitrateLimit { get; set; }
 

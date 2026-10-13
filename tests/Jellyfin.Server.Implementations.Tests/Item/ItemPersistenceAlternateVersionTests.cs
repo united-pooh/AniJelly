@@ -8,7 +8,6 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Model.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -30,14 +29,12 @@ public sealed class ItemPersistenceAlternateVersionTests : SqliteDbTestFixture
     private readonly ItemPersistenceService _service;
     private readonly ILibraryManager? _previousLibraryManager;
     private readonly IServerConfigurationManager? _previousConfigurationManager;
-    private readonly IRecordingsManager? _previousRecordingsManager;
 
     public ItemPersistenceAlternateVersionTests()
     {
         // BaseItem resolves these through process-wide statics; restored in Dispose.
         _previousLibraryManager = BaseItem.LibraryManager;
         _previousConfigurationManager = BaseItem.ConfigurationManager;
-        _previousRecordingsManager = Video.RecordingsManager;
 
         var libraryManager = new Mock<ILibraryManager>();
         libraryManager.Setup(l => l.GetCollectionFolders(It.IsAny<BaseItem>()))
@@ -47,9 +44,6 @@ public sealed class ItemPersistenceAlternateVersionTests : SqliteDbTestFixture
         var configurationManager = new Mock<IServerConfigurationManager>();
         configurationManager.Setup(c => c.Configuration).Returns(new ServerConfiguration());
         BaseItem.ConfigurationManager = configurationManager.Object;
-
-        // Video.SourceType asks this whether the file is an in-progress recording.
-        Video.RecordingsManager = new Mock<IRecordingsManager>().Object;
 
         // Paths round-trip through the host's virtual path mapping on the way in and out.
         var appHost = new Mock<IServerApplicationHost>();
@@ -66,7 +60,6 @@ public sealed class ItemPersistenceAlternateVersionTests : SqliteDbTestFixture
     {
         BaseItem.LibraryManager = _previousLibraryManager!;
         BaseItem.ConfigurationManager = _previousConfigurationManager!;
-        Video.RecordingsManager = _previousRecordingsManager!;
         base.Dispose(disposing);
     }
 

@@ -128,12 +128,7 @@ namespace MediaBrowser.Controller.Entities.Audio
 
         public override UnratedItem GetBlockUnratedType()
         {
-            if (SourceType == SourceType.Library)
-            {
-                return UnratedItem.Music;
-            }
-
-            return base.GetBlockUnratedType();
+            return UnratedItem.Music;
         }
 
         public SongInfo GetLookupInfo()

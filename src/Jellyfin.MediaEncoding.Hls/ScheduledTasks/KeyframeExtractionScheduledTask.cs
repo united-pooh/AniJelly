@@ -58,7 +58,6 @@ public class KeyframeExtractionScheduledTask : IScheduledTask
             IsVirtualItem = false,
             IncludeItemTypes = _itemTypes,
             DtoOptions = new DtoOptions(true),
-            SourceTypes = [SourceType.Library],
             Recursive = true,
             IncludeOwnedItems = true,
             Limit = Pagesize

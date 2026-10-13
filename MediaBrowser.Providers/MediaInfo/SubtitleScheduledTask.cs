@@ -100,7 +100,6 @@ namespace MediaBrowser.Providers.MediaInfo
                         IsVirtualItem = false,
                         IncludeItemTypes = types,
                         DtoOptions = new DtoOptions(true),
-                        SourceTypes = new[] { SourceType.Library },
                         Parent = library,
                         Recursive = true,
                         IncludeOwnedItems = true

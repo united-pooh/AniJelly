@@ -213,7 +213,6 @@ public class SearchManager : ISearchManager
                 [
                     ItemFields.AirTime,
                     ItemFields.DateCreated,
-                    ItemFields.ChannelInfo,
                     ItemFields.ParentId
                 ]
             }

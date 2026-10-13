@@ -1,5 +1,4 @@
 using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
@@ -23,12 +22,6 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.Movies
         /// <inheritdoc />
         public bool Supports(IHasProviderIds item)
         {
-            // Supports images for tv movies
-            if (item is LiveTvProgram tvProgram && tvProgram.IsMovie)
-            {
-                return true;
-            }
-
             return item is Movie;
         }
     }

@@ -652,11 +652,6 @@ public partial class TrickplayManager : ITrickplayManager
             return false;
         }
 
-        if (!video.IsCompleteMedia)
-        {
-            return false;
-        }
-
         if (!video.RunTimeTicks.HasValue || video.RunTimeTicks.Value < TimeSpan.FromMilliseconds(interval).Ticks)
         {
             return false;

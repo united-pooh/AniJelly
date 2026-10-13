@@ -25,7 +25,6 @@ namespace MediaBrowser.Controller.Entities
             ArtistIds = [];
             BlockUnratedItems = [];
             BoxSetLibraryFolders = [];
-            ChannelIds = [];
             ContributingArtistIds = [];
             DtoOptions = new DtoOptions();
             EnableTotalRecordCount = true;
@@ -51,7 +50,6 @@ namespace MediaBrowser.Controller.Entities
             PersonTypes = [];
             PresetViews = [];
             SeriesStatuses = [];
-            SourceTypes = [];
             StudioIds = [];
             Tags = [];
             TopParentIds = [];
@@ -123,7 +121,6 @@ namespace MediaBrowser.Controller.Entities
             || IsKids.HasValue
             || IsNews.HasValue
             || IsSeries.HasValue
-            || IsAiring.HasValue
             || IsVirtualItem.HasValue
             || HasImdbId.HasValue
             || HasTmdbId.HasValue
@@ -151,10 +148,6 @@ namespace MediaBrowser.Controller.Entities
             || MaxHeight.HasValue
             || MinPremiereDate.HasValue
             || MaxPremiereDate.HasValue
-            || MinStartDate.HasValue
-            || MaxStartDate.HasValue
-            || MinEndDate.HasValue
-            || MaxEndDate.HasValue
             || MinDateCreated.HasValue
             || MinDateLastSaved.HasValue
             || MinDateLastSavedForUser.HasValue
@@ -301,16 +294,6 @@ namespace MediaBrowser.Controller.Entities
 
         public DateTime? MaxPremiereDate { get; set; }
 
-        public DateTime? MinStartDate { get; set; }
-
-        public DateTime? MaxStartDate { get; set; }
-
-        public DateTime? MinEndDate { get; set; }
-
-        public DateTime? MaxEndDate { get; set; }
-
-        public bool? IsAiring { get; set; }
-
         public bool? IsMovie { get; set; }
 
         public bool? IsSports { get; set; }
@@ -338,8 +321,6 @@ namespace MediaBrowser.Controller.Entities
         public double? MinCriticRating { get; set; }
 
         public double? MinCommunityRating { get; set; }
-
-        public IReadOnlyList<Guid> ChannelIds { get; set; }
 
         public int? ParentIndexNumber { get; set; }
 
@@ -380,13 +361,7 @@ namespace MediaBrowser.Controller.Entities
 
         public TrailerType[] TrailerTypes { get; set; }
 
-        public SourceType[] SourceTypes { get; set; }
-
         public SeriesStatus[] SeriesStatuses { get; set; }
-
-        public string? ExternalSeriesId { get; set; }
-
-        public string? ExternalId { get; set; }
 
         public Guid[] AlbumIds { get; set; }
 
@@ -476,8 +451,6 @@ namespace MediaBrowser.Controller.Entities
 
         public Guid[] ContributingArtistIds { get; set; }
 
-        public bool? HasAired { get; set; }
-
         public bool? HasOwnerId { get; set; }
 
         /// <summary>
@@ -505,8 +478,6 @@ namespace MediaBrowser.Controller.Entities
         public int? MinWidth { get; set; }
 
         public string? SearchTerm { get; set; }
-
-        public string? SeriesTimerId { get; set; }
 
         public bool SkipDeserialization { get; set; }
 

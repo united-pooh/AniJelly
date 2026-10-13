@@ -133,7 +133,6 @@ public class UniversalAudioController : BaseJellyfinApiController
         var info = await _mediaInfoHelper.GetPlaybackInfo(
                 item,
                 user,
-                Request,
                 mediaSourceId)
             .ConfigureAwait(false);
 

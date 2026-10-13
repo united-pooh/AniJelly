@@ -26,7 +26,6 @@ public class LyricScheduledTask : IScheduledTask
 
     private static readonly BaseItemKind[] _itemKinds = [BaseItemKind.Audio];
     private static readonly MediaType[] _mediaTypes = [MediaType.Audio];
-    private static readonly SourceType[] _sourceTypes = [SourceType.Library];
     private static readonly DtoOptions _dtoOptions = new(false);
 
     private readonly ILibraryManager _libraryManager;
@@ -74,8 +73,7 @@ public class LyricScheduledTask : IScheduledTask
             IsVirtualItem = false,
             IncludeItemTypes = _itemKinds,
             DtoOptions = _dtoOptions,
-            MediaTypes = _mediaTypes,
-            SourceTypes = _sourceTypes
+            MediaTypes = _mediaTypes
         });
 
         var completed = 0;
@@ -90,7 +88,6 @@ public class LyricScheduledTask : IScheduledTask
                 IncludeItemTypes = _itemKinds,
                 DtoOptions = _dtoOptions,
                 MediaTypes = _mediaTypes,
-                SourceTypes = _sourceTypes,
                 Limit = QueryPageLimit,
                 Parent = library
             };

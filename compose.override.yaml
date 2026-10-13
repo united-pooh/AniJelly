@@ -1,0 +1,9 @@
+services:
+  jellyfin:
+    volumes:
+      - type: bind
+        source: ${HOME}/Downloads
+        target: /data
+        read_only: true
+        bind:
+          create_host_path: false

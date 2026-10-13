@@ -81,7 +81,6 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
         public async Task<MetadataResult<Episode>> GetMetadata(EpisodeInfo info, CancellationToken cancellationToken)
         {
             var metadataResult = new MetadataResult<Episode>();
-            var config = Plugin.Instance.Configuration;
 
             // Allowing this will dramatically increase scan times
             if (info.IsMissingEpisode)
@@ -96,14 +95,14 @@ namespace MediaBrowser.Providers.Plugins.Tmdb.TV
                 return metadataResult;
             }
 
-            var seasonNumber = info.ParentIndexNumber ?? 1;
             var episodeNumber = info.IndexNumber;
 
-            if (!episodeNumber.HasValue)
+            if (info.ParentIndexNumber is not int seasonNumber || seasonNumber < 0 || !episodeNumber.HasValue)
             {
                 return metadataResult;
             }
 
+            var config = Plugin.Instance.Configuration;
             var episodeGroup = info.SeriesProviderIds.GetValueOrDefault(TmdbEpisodeGroupId.ProviderKey);
             TvEpisode? episodeResult = null;
             if (info.IndexNumberEnd.HasValue)

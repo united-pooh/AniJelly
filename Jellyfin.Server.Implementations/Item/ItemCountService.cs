@@ -94,10 +94,6 @@ public class ItemCountService : IItemCountService
             {
                 result.MusicVideoCount = count.Count;
             }
-            else if (string.Equals(count.Key, lookup[BaseItemKind.LiveTvProgram], StringComparison.Ordinal))
-            {
-                result.ProgramCount = count.Count;
-            }
             else if (string.Equals(count.Key, lookup[BaseItemKind.Series], StringComparison.Ordinal))
             {
                 result.SeriesCount = count.Count;
@@ -488,7 +484,8 @@ public class ItemCountService : IItemCountService
         {
             // Access filtering is what would otherwise drop an alternate version, and a child count
             // must not report a title twice just because no user was passed in.
-            accessibleItems = accessibleItems.Where(DescendantQueryHelper.IsDistinctLibraryItem);
+            accessibleItems = BaseItemRepository.ExcludeRetiredItems(accessibleItems)
+                .Where(DescendantQueryHelper.IsDistinctLibraryItem);
         }
         else
         {

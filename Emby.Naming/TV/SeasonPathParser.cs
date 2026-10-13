@@ -29,6 +29,9 @@ namespace Emby.Naming.TV
         [GeneratedRegex(SeasonKeywordPattern, RegexOptions.IgnoreCase)]
         private static partial Regex SeasonKeyword();
 
+        [GeneratedRegex(@"^第(?<seasonnumber>[0-9]+|[零〇一二三四五六七八九两兩]|[一二三四五六七八九两兩]?十[一二三四五六七八九]?)[季期](?!第?[0-9零〇一二三四五六七八九十两兩]+[集话話]|[Ee][0-9])")]
+        private static partial Regex ChineseSeason();
+
         /// <summary>
         /// Attempts to parse season number from path.
         /// </summary>
@@ -88,9 +91,31 @@ namespace Emby.Naming.TV
 
             if (supportSpecialAliases &&
                 (filename.Equals("specials", StringComparison.OrdinalIgnoreCase) ||
-                 filename.Equals("extras", StringComparison.OrdinalIgnoreCase)))
+                 filename.Equals("extras", StringComparison.OrdinalIgnoreCase) ||
+                 filename.Equals("sp", StringComparison.OrdinalIgnoreCase) ||
+                 filename.Equals("sps", StringComparison.OrdinalIgnoreCase) ||
+                 filename is "特典" or "特别篇" or "特別篇"))
             {
                 return (0, true);
+            }
+
+            var chineseMatch = ChineseSeason().Match(filename);
+            if (chineseMatch.Success)
+            {
+                var number = chineseMatch.Groups["seasonnumber"].ValueSpan;
+                if (char.IsAsciiDigit(number[0]))
+                {
+                    return int.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out val)
+                        ? (val, true)
+                        : (null, false);
+                }
+
+                var tensIndex = number.IndexOf('十');
+                var seasonNumber = tensIndex < 0
+                    ? GetChineseDigit(number[0])
+                    : (tensIndex == 0 ? 1 : GetChineseDigit(number[0])) * 10
+                        + (tensIndex == number.Length - 1 ? 0 : GetChineseDigit(number[^1]));
+                return (seasonNumber, true);
             }
 
             if (supportNumericSeasonFolders &&
@@ -121,6 +146,13 @@ namespace Emby.Naming.TV
                 return CheckMatch(postMatch);
             }
         }
+
+        private static int GetChineseDigit(char digit) => digit switch
+        {
+            '两' or '兩' => 2,
+            '〇' => 0,
+            _ => "零一二三四五六七八九".IndexOf(digit, StringComparison.Ordinal)
+        };
 
         private static (int? SeasonNumber, bool IsSeasonFolder) CheckMatch(Match match)
         {

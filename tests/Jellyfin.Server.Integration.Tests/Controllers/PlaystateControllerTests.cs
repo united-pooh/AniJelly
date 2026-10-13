@@ -21,7 +21,7 @@ public class PlaystateControllerTests : IClassFixture<JellyfinApplicationFactory
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
 
-        using var response = await client.DeleteAsync($"Users/{Guid.NewGuid()}/PlayedItems/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        using var response = await client.DeleteAsync($"UserPlayedItems/{Guid.NewGuid()}?userId={Guid.NewGuid()}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -31,7 +31,7 @@ public class PlaystateControllerTests : IClassFixture<JellyfinApplicationFactory
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
 
-        using var response = await client.PostAsync($"Users/{Guid.NewGuid()}/PlayedItems/{Guid.NewGuid()}", null, TestContext.Current.CancellationToken);
+        using var response = await client.PostAsync($"UserPlayedItems/{Guid.NewGuid()}?userId={Guid.NewGuid()}", null, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -43,7 +43,7 @@ public class PlaystateControllerTests : IClassFixture<JellyfinApplicationFactory
 
         var userDto = await AuthHelper.GetUserDtoAsync(client);
 
-        using var response = await client.DeleteAsync($"Users/{userDto.Id}/PlayedItems/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        using var response = await client.DeleteAsync($"UserPlayedItems/{Guid.NewGuid()}?userId={userDto.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -55,7 +55,7 @@ public class PlaystateControllerTests : IClassFixture<JellyfinApplicationFactory
 
         var userDto = await AuthHelper.GetUserDtoAsync(client);
 
-        using var response = await client.PostAsync($"Users/{userDto.Id}/PlayedItems/{Guid.NewGuid()}", null, TestContext.Current.CancellationToken);
+        using var response = await client.PostAsync($"UserPlayedItems/{Guid.NewGuid()}?userId={userDto.Id}", null, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

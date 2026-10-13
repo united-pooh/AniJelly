@@ -117,7 +117,6 @@ public sealed class MovieSimilarItemsProvider : ILocalSimilarItemsProvider<Movie
         if (_serverConfigurationManager.Configuration.EnableExternalContentInSuggestions)
         {
             includeItemTypes.Add(BaseItemKind.Trailer);
-            includeItemTypes.Add(BaseItemKind.LiveTvProgram);
         }
 
         var limit = query.Limit ?? 50;

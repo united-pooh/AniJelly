@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Events;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
@@ -167,7 +166,7 @@ public sealed class LibraryChangedNotifier : IHostedService, IDisposable
 
     private static bool EnableRefreshMessage(BaseItem item)
         => item is Folder { IsRoot: false, IsTopParent: true }
-            and not (AggregateFolder or UserRootFolder or UserView or Channel);
+            and not (AggregateFolder or UserRootFolder or UserView);
 
     private void OnLibraryItemAdded(object? sender, ItemChangeEventArgs e)
         => OnLibraryChange(e.Item, e.Parent, _itemsAdded, _foldersAddedTo);
@@ -364,7 +363,7 @@ public sealed class LibraryChangedNotifier : IHostedService, IDisposable
             return false;
         }
 
-        return item.SourceType == SourceType.Library;
+        return true;
     }
 
     private static IEnumerable<string> GetTopParentIds(List<BaseItem> items, List<Folder> allUserRootChildren)

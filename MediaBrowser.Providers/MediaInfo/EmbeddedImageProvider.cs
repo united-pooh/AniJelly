@@ -239,7 +239,7 @@ namespace MediaBrowser.Providers.MediaInfo
                 return false;
             }
 
-            return item is Video video && !video.IsPlaceHolder && video.IsCompleteMedia;
+            return item is Video video && !video.IsPlaceHolder;
         }
     }
 }

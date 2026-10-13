@@ -499,8 +499,6 @@ namespace Jellyfin.Server.Implementations.Users
                     IsDisabled = user.HasPermission(PermissionKind.IsDisabled),
                     EnableSharedDeviceControl = user.HasPermission(PermissionKind.EnableSharedDeviceControl),
                     EnableRemoteAccess = user.HasPermission(PermissionKind.EnableRemoteAccess),
-                    EnableLiveTvManagement = user.HasPermission(PermissionKind.EnableLiveTvManagement),
-                    EnableLiveTvAccess = user.HasPermission(PermissionKind.EnableLiveTvAccess),
                     EnableMediaPlayback = user.HasPermission(PermissionKind.EnableMediaPlayback),
                     EnableAudioPlaybackTranscoding = user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding),
                     EnableVideoPlaybackTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding),
@@ -508,7 +506,6 @@ namespace Jellyfin.Server.Implementations.Users
                     EnableContentDownloading = user.HasPermission(PermissionKind.EnableContentDownloading),
                     EnableSyncTranscoding = user.HasPermission(PermissionKind.EnableSyncTranscoding),
                     EnableMediaConversion = user.HasPermission(PermissionKind.EnableMediaConversion),
-                    EnableAllChannels = user.HasPermission(PermissionKind.EnableAllChannels),
                     EnableAllDevices = user.HasPermission(PermissionKind.EnableAllDevices),
                     EnableAllFolders = user.HasPermission(PermissionKind.EnableAllFolders),
                     EnableRemoteControlOfOtherUsers = user.HasPermission(PermissionKind.EnableRemoteControlOfOtherUsers),
@@ -520,12 +517,10 @@ namespace Jellyfin.Server.Implementations.Users
                     AccessSchedules = user.AccessSchedules.ToArray(),
                     BlockedTags = user.GetPreference(PreferenceKind.BlockedTags),
                     AllowedTags = user.GetPreference(PreferenceKind.AllowedTags),
-                    EnabledChannels = user.GetPreferenceValues<Guid>(PreferenceKind.EnabledChannels),
                     EnabledDevices = user.GetPreference(PreferenceKind.EnabledDevices),
                     EnabledFolders = user.GetPreferenceValues<Guid>(PreferenceKind.EnabledFolders),
                     EnableContentDeletionFromFolders = user.GetPreference(PreferenceKind.EnableContentDeletionFromFolders),
                     SyncPlayAccess = user.SyncPlayAccess,
-                    BlockedChannels = user.GetPreferenceValues<Guid>(PreferenceKind.BlockedChannels),
                     BlockedMediaFolders = user.GetPreferenceValues<Guid>(PreferenceKind.BlockedMediaFolders),
                     BlockUnratedItems = user.GetPreferenceValues<UnratedItem>(PreferenceKind.BlockUnratedItems)
                 }
@@ -882,8 +877,6 @@ namespace Jellyfin.Server.Implementations.Users
                     user.SetPermission(PermissionKind.IsDisabled, policy.IsDisabled);
                     user.SetPermission(PermissionKind.EnableSharedDeviceControl, policy.EnableSharedDeviceControl);
                     user.SetPermission(PermissionKind.EnableRemoteAccess, policy.EnableRemoteAccess);
-                    user.SetPermission(PermissionKind.EnableLiveTvManagement, policy.EnableLiveTvManagement);
-                    user.SetPermission(PermissionKind.EnableLiveTvAccess, policy.EnableLiveTvAccess);
                     user.SetPermission(PermissionKind.EnableMediaPlayback, policy.EnableMediaPlayback);
                     user.SetPermission(PermissionKind.EnableAudioPlaybackTranscoding, policy.EnableAudioPlaybackTranscoding);
                     user.SetPermission(PermissionKind.EnableVideoPlaybackTranscoding, policy.EnableVideoPlaybackTranscoding);
@@ -891,7 +884,6 @@ namespace Jellyfin.Server.Implementations.Users
                     user.SetPermission(PermissionKind.EnableContentDownloading, policy.EnableContentDownloading);
                     user.SetPermission(PermissionKind.EnableSyncTranscoding, policy.EnableSyncTranscoding);
                     user.SetPermission(PermissionKind.EnableMediaConversion, policy.EnableMediaConversion);
-                    user.SetPermission(PermissionKind.EnableAllChannels, policy.EnableAllChannels);
                     user.SetPermission(PermissionKind.EnableAllDevices, policy.EnableAllDevices);
                     user.SetPermission(PermissionKind.EnableAllFolders, policy.EnableAllFolders);
                     user.SetPermission(PermissionKind.EnableRemoteControlOfOtherUsers, policy.EnableRemoteControlOfOtherUsers);
@@ -912,7 +904,6 @@ namespace Jellyfin.Server.Implementations.Users
                     user.SetPreference(PreferenceKind.BlockUnratedItems, policy.BlockUnratedItems ?? Array.Empty<UnratedItem>());
                     user.SetPreference(PreferenceKind.BlockedTags, policy.BlockedTags);
                     user.SetPreference(PreferenceKind.AllowedTags, policy.AllowedTags);
-                    user.SetPreference(PreferenceKind.EnabledChannels, policy.EnabledChannels);
                     user.SetPreference(PreferenceKind.EnabledDevices, policy.EnabledDevices);
                     user.SetPreference(PreferenceKind.EnabledFolders, policy.EnabledFolders);
                     user.SetPreference(PreferenceKind.EnableContentDeletionFromFolders, policy.EnableContentDeletionFromFolders);

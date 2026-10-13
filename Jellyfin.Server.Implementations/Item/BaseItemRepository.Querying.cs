@@ -169,7 +169,7 @@ public sealed partial class BaseItemRepository
         // The album is what gets returned, and neither branch above reads it through the
         // user's filters, so its own parental restrictions have to be applied here: a
         // matching track does not make an album the user may not see visible.
-        var orderedAlbums = ApplyParentalRestrictions(context, topAlbumsQuery, filter)
+        var orderedAlbums = ApplyParentalRestrictions(context, ExcludeRetiredItems(topAlbumsQuery), filter)
             .OrderByDescending(album => album.DateCreated)
             .ThenByDescending(album => album.Id);
 
@@ -187,7 +187,7 @@ public sealed partial class BaseItemRepository
         InternalItemsQuery filter)
     {
         var itemsQuery = ApplyNavigations(
-            context.BaseItems.AsNoTracking().Where(e => idsQuery.Contains(e.Id)),
+            ExcludeRetiredItems(context.BaseItems.AsNoTracking()).Where(e => idsQuery.Contains(e.Id)),
             filter);
 
         return itemsQuery
@@ -210,7 +210,7 @@ public sealed partial class BaseItemRepository
         }
 
         var itemsQuery = ApplyNavigations(
-            context.BaseItems.AsNoTracking().WhereOneOrMany(ids, e => e.Id),
+            ExcludeRetiredItems(context.BaseItems.AsNoTracking()).WhereOneOrMany(ids, e => e.Id),
             filter);
 
         return itemsQuery
@@ -382,8 +382,7 @@ public sealed partial class BaseItemRepository
         var episodeType = _itemTypeLookup.BaseItemKindNames[BaseItemKind.Episode];
         var seasonType = _itemTypeLookup.BaseItemKindNames[BaseItemKind.Season];
         var seasonEpisodeCounts = allSeasonIds.Count > 0
-            ? context.BaseItems
-                .AsNoTracking()
+            ? ExcludeRetiredItems(context.BaseItems.AsNoTracking())
                 .Where(e => e.SeasonId.HasValue && allSeasonIds.Contains(e.SeasonId.Value) && e.Type == episodeType)
                 .GroupBy(e => e.SeasonId!.Value)
                 .Select(g => new { SeasonId = g.Key, Count = g.Count() })
@@ -391,8 +390,7 @@ public sealed partial class BaseItemRepository
             : [];
 
         var seriesSeasonCounts = allSeriesIds.Count > 0
-            ? context.BaseItems
-                .AsNoTracking()
+            ? ExcludeRetiredItems(context.BaseItems.AsNoTracking())
                 .Where(e => e.SeriesId.HasValue && allSeriesIds.Contains(e.SeriesId.Value) && e.Type == seasonType)
                 .GroupBy(e => e.SeriesId!.Value)
                 .Select(g => new { SeriesId = g.Key, Count = g.Count() })
@@ -462,7 +460,7 @@ public sealed partial class BaseItemRepository
         {
             var allowedContainerIds = ApplyParentalRestrictions(
                     context,
-                    context.BaseItems.AsNoTracking().Where(e => entitiesToFetch.Contains(e.Id)),
+                    ExcludeRetiredItems(context.BaseItems.AsNoTracking()).Where(e => entitiesToFetch.Contains(e.Id)),
                     filter)
                 .Select(e => e.Id)
                 .ToHashSet();
@@ -492,7 +490,7 @@ public sealed partial class BaseItemRepository
         // Step 6: Fetch the Season/Series entities we decided to return
         var entities = entitiesToFetch.Count > 0
             ? ApplyNavigations(
-                    context.BaseItems.AsNoTracking().Where(e => entitiesToFetch.Contains(e.Id)),
+                    ExcludeRetiredItems(context.BaseItems.AsNoTracking()).Where(e => entitiesToFetch.Contains(e.Id)),
                     filter)
                 .AsSingleQuery()
                 .ToDictionary(e => e.Id)
@@ -573,7 +571,7 @@ public sealed partial class BaseItemRepository
             .Include(e => e.LinkedChildEntities)
             .AsSingleQuery();
 
-        var item = dbQuery.FirstOrDefault(e => e.Id == id);
+        var item = ExcludeRetiredItems(dbQuery).FirstOrDefault(e => e.Id == id);
         if (item is null)
         {
             return null;

@@ -110,6 +110,44 @@ public sealed class ArtistNameLookupTests : SqliteDbTestFixture
         Assert.Equal(artistId, CreateLibraryManager(lookup).GetArtist("Bjork").Id);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetArtists_ExcludesRetiredPluginArtistsWithMatchingName(bool emptyChannelId)
+    {
+        var lookup = new ItemTypeLookup();
+        var artistId = Guid.NewGuid();
+        var retiredArtistId = Guid.NewGuid();
+        const string name = "Same Artist";
+        using (var context = CreateDbContext())
+        {
+            context.BaseItems.AddRange(
+                new BaseItemEntity
+                {
+                    Id = artistId,
+                    Name = name,
+                    CleanName = name.GetCleanValue(),
+                    Type = lookup.BaseItemKindNames[BaseItemKind.MusicArtist],
+                    ChannelId = emptyChannelId ? Guid.Empty : null
+                },
+                new BaseItemEntity
+                {
+                    Id = retiredArtistId,
+                    Name = name,
+                    CleanName = name.GetCleanValue(),
+                    Type = lookup.BaseItemKindNames[BaseItemKind.MusicArtist],
+                    ChannelId = Guid.NewGuid()
+                });
+            context.SaveChanges();
+        }
+
+        var artists = CreateLibraryManager(lookup).GetArtists([name]);
+
+        Assert.Equal(artistId, Assert.Single(artists[name]).Id);
+        using var verification = CreateDbContext();
+        Assert.True(verification.BaseItems.Any(item => item.Id.Equals(retiredArtistId)));
+    }
+
     private ServerLibraryManager CreateLibraryManager(ItemTypeLookup lookup)
     {
         var repository = CreateBaseItemRepository(lookup);

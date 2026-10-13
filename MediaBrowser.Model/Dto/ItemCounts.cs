@@ -30,12 +30,6 @@ namespace MediaBrowser.Model.Dto
         public int ArtistCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the program count.
-        /// </summary>
-        /// <value>The program count.</value>
-        public int ProgramCount { get; set; }
-
-        /// <summary>
         /// Gets or sets the trailer count.
         /// </summary>
         /// <value>The trailer count.</value>
@@ -83,7 +77,7 @@ namespace MediaBrowser.Model.Dto
         /// <returns>The total of the counts.</returns>
         public int TotalItemCount()
         {
-            return MovieCount + SeriesCount + EpisodeCount + ArtistCount + ProgramCount + TrailerCount + SongCount + AlbumCount + MusicVideoCount + BoxSetCount + BookCount;
+            return MovieCount + SeriesCount + EpisodeCount + ArtistCount + TrailerCount + SongCount + AlbumCount + MusicVideoCount + BoxSetCount + BookCount;
         }
     }
 }

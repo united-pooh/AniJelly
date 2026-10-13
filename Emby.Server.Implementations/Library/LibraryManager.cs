@@ -34,7 +34,6 @@ using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Controller.Providers;
@@ -335,7 +334,7 @@ namespace Emby.Server.Implementations.Library
             }
             else if (!item.IsFolder)
             {
-                if (item is not Video && item is not LiveTvChannel)
+                if (item is not Video)
                 {
                     return;
                 }
@@ -422,41 +421,12 @@ namespace Emby.Server.Implementations.Library
         {
             ArgumentNullException.ThrowIfNull(item);
 
-            if (item.SourceType == SourceType.Channel)
-            {
-                if (options.DeleteFromExternalProvider)
-                {
-                    try
-                    {
-                        BaseItem.ChannelManager.DeleteItem(item).GetAwaiter().GetResult();
-                    }
-                    catch (ArgumentException)
-                    {
-                        // channel no longer installed
-                    }
-                }
-
-                options.DeleteFileLocation = false;
-            }
-
-            if (item is LiveTvProgram)
-            {
-                _logger.LogDebug(
-                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                    item.GetType().Name,
-                    item.Name ?? "Unknown name",
-                    item.Path ?? string.Empty,
-                    item.Id);
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                    item.GetType().Name,
-                    item.Name ?? "Unknown name",
-                    item.Path ?? string.Empty,
-                    item.Id);
-            }
+            _logger.LogInformation(
+                "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                item.GetType().Name,
+                item.Name ?? "Unknown name",
+                item.Path ?? string.Empty,
+                item.Id);
 
             // If deleting a primary version video, clear PrimaryVersionId from alternate versions
             // OwnerId check: items with OwnerId set are alternate versions or extras, not primaries
@@ -1737,7 +1707,7 @@ namespace Emby.Server.Implementations.Library
             return ItemIsVisible(item, user) ? item : null;
         }
 
-        public IReadOnlyList<BaseItem> GetItemList(InternalItemsQuery query, bool allowExternalContent)
+        public IReadOnlyList<BaseItem> GetItemList(InternalItemsQuery query)
         {
             if (query.Recursive && !query.ParentId.IsEmpty())
             {
@@ -1750,15 +1720,10 @@ namespace Emby.Server.Implementations.Library
 
             if (query.User is not null)
             {
-                AddUserToQuery(query, query.User, allowExternalContent);
+                AddUserToQuery(query, query.User);
             }
 
             return _itemRepository.GetItemList(query);
-        }
-
-        public IReadOnlyList<BaseItem> GetItemList(InternalItemsQuery query)
-        {
-            return GetItemList(query, true);
         }
 
         public int GetCount(InternalItemsQuery query)
@@ -2087,7 +2052,7 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
-        private void AddUserToQuery(InternalItemsQuery query, User user, bool allowExternalContent = true)
+        private void AddUserToQuery(InternalItemsQuery query, User user)
         {
             if (query.User is null)
             {
@@ -2096,7 +2061,6 @@ namespace Emby.Server.Implementations.Library
 
             if (query.AncestorIds.Length == 0 &&
                 query.ParentId.IsEmpty() &&
-                query.ChannelIds.Count == 0 &&
                 query.TopParentIds.Length == 0 &&
                 string.IsNullOrEmpty(query.AncestorWithPresentationUniqueKey) &&
                 string.IsNullOrEmpty(query.SeriesPresentationUniqueKey) &&
@@ -2106,8 +2070,7 @@ namespace Emby.Server.Implementations.Library
                 var userViews = UserViewManager.GetUserViews(new UserViewQuery
                 {
                     User = user,
-                    IncludeHidden = true,
-                    IncludeExternalContent = allowExternalContent
+                    IncludeHidden = true
                 });
 
                 query.TopParentIds = userViews.SelectMany(i => GetTopParentIdsForQuery(i, user)).ToArray();
@@ -2133,11 +2096,6 @@ namespace Emby.Server.Implementations.Library
         {
             if (item is UserView view)
             {
-                if (view.ViewType == CollectionType.livetv)
-                {
-                    return [view.Id];
-                }
-
                 // Translate view into folders
                 if (!view.DisplayParentId.IsEmpty())
                 {
@@ -2505,12 +2463,6 @@ namespace Emby.Server.Implementations.Library
             {
                 foreach (var item in items)
                 {
-                    // With the live tv guide this just creates too much noise
-                    if (item.SourceType != SourceType.Library)
-                    {
-                        continue;
-                    }
-
                     try
                     {
                         ItemAdded(
@@ -2561,13 +2513,7 @@ namespace Emby.Server.Implementations.Library
                 ? item.ImageInfos.Where(i => i.Path is not null).ToArray()
                 : item.ImageInfos.Where(ImageNeedsRefresh).ToArray();
 
-            var parentItem = item.GetParent();
-            var isLiveTvShow = item.SourceType != SourceType.Library &&
-                               parentItem is not null &&
-                               parentItem.SourceType != SourceType.Library; // not a channel
-
-            // Skip image processing if current or live tv show
-            if (outdated.Length == 0 || isLiveTvShow)
+            if (outdated.Length == 0)
             {
                 RegisterItem(item);
                 return;
@@ -2733,12 +2679,6 @@ namespace Emby.Server.Implementations.Library
             {
                 foreach (var item in items)
                 {
-                    // With the live tv guide this just creates too much noise
-                    if (item.SourceType != SourceType.Library)
-                    {
-                        continue;
-                    }
-
                     try
                     {
                         ItemUpdated(

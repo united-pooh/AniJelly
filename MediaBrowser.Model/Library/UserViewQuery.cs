@@ -10,7 +10,6 @@ namespace MediaBrowser.Model.Library
     {
         public UserViewQuery()
         {
-            IncludeExternalContent = true;
             PresetViews = Array.Empty<CollectionType?>();
         }
 
@@ -19,12 +18,6 @@ namespace MediaBrowser.Model.Library
         /// </summary>
         /// <value>The user.</value>
         public required User User { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether [include external content].
-        /// </summary>
-        /// <value><c>true</c> if [include external content]; otherwise, <c>false</c>.</value>
-        public bool IncludeExternalContent { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [include hidden].

@@ -11,14 +11,12 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Extensions;
 using MediaBrowser.Common;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Chapters;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Trickplay;
@@ -46,7 +44,6 @@ namespace Emby.Server.Implementations.Dto
                     BaseItemKind.Audio,
                     BaseItemKind.Episode,
                     BaseItemKind.Movie,
-                    BaseItemKind.LiveTvProgram,
                     BaseItemKind.MusicAlbum,
                     BaseItemKind.MusicArtist,
                     BaseItemKind.MusicVideo,
@@ -76,7 +73,6 @@ namespace Emby.Server.Implementations.Dto
                     BaseItemKind.Book,
                     BaseItemKind.Episode,
                     BaseItemKind.Movie,
-                    BaseItemKind.LiveTvProgram,
                     BaseItemKind.MusicAlbum,
                     BaseItemKind.MusicArtist,
                     BaseItemKind.MusicVideo,
@@ -89,7 +85,6 @@ namespace Emby.Server.Implementations.Dto
                     BaseItemKind.Audio,
                     BaseItemKind.Episode,
                     BaseItemKind.Movie,
-                    BaseItemKind.LiveTvProgram,
                     BaseItemKind.MusicAlbum,
                     BaseItemKind.MusicArtist,
                     BaseItemKind.MusicVideo,
@@ -102,7 +97,6 @@ namespace Emby.Server.Implementations.Dto
                     BaseItemKind.Audio,
                     BaseItemKind.Episode,
                     BaseItemKind.Movie,
-                    BaseItemKind.LiveTvProgram,
                     BaseItemKind.MusicAlbum,
                     BaseItemKind.MusicArtist,
                     BaseItemKind.MusicVideo,
@@ -118,11 +112,9 @@ namespace Emby.Server.Implementations.Dto
 
         private readonly IImageProcessor _imageProcessor;
         private readonly IProviderManager _providerManager;
-        private readonly IRecordingsManager _recordingsManager;
 
         private readonly IApplicationHost _appHost;
         private readonly IMediaSourceManager _mediaSourceManager;
-        private readonly Lazy<ILiveTvManager> _livetvManagerFactory;
 
         private readonly ITrickplayManager _trickplayManager;
         private readonly IChapterManager _chapterManager;
@@ -133,10 +125,8 @@ namespace Emby.Server.Implementations.Dto
             IUserDataManager userDataRepository,
             IImageProcessor imageProcessor,
             IProviderManager providerManager,
-            IRecordingsManager recordingsManager,
             IApplicationHost appHost,
             IMediaSourceManager mediaSourceManager,
-            Lazy<ILiveTvManager> livetvManagerFactory,
             ITrickplayManager trickplayManager,
             IChapterManager chapterManager)
         {
@@ -145,15 +135,11 @@ namespace Emby.Server.Implementations.Dto
             _userDataRepository = userDataRepository;
             _imageProcessor = imageProcessor;
             _providerManager = providerManager;
-            _recordingsManager = recordingsManager;
             _appHost = appHost;
             _mediaSourceManager = mediaSourceManager;
-            _livetvManagerFactory = livetvManagerFactory;
             _trickplayManager = trickplayManager;
             _chapterManager = chapterManager;
         }
-
-        private ILiveTvManager LivetvManager => _livetvManagerFactory.Value;
 
         /// <inheritdoc />
         public IReadOnlyList<BaseItemDto> GetBaseItemDtos(
@@ -165,8 +151,6 @@ namespace Emby.Server.Implementations.Dto
         {
             var accessibleItems = skipVisibilityCheck || user is null ? items : items.Where(x => x.IsVisible(user)).ToList();
             var returnItems = new BaseItemDto[accessibleItems.Count];
-            List<(BaseItem, BaseItemDto)>? programTuples = null;
-            List<(BaseItemDto, LiveTvChannel)>? channelTuples = null;
 
             // Batch-fetch user data for all items
             Dictionary<Guid, UserItemData>? userDataBatch = null;
@@ -286,15 +270,6 @@ namespace Emby.Server.Implementations.Dto
                     peopleBatch,
                     alternateVersionItemIds);
 
-                if (item is LiveTvChannel tvChannel)
-                {
-                    (channelTuples ??= []).Add((dto, tvChannel));
-                }
-                else if (item is LiveTvProgram)
-                {
-                    (programTuples ??= []).Add((item, dto));
-                }
-
                 if (options.ContainsField(ItemFields.ItemCounts))
                 {
                     SetItemByNameInfo(dto, user, itemCountsBatch);
@@ -303,31 +278,12 @@ namespace Emby.Server.Implementations.Dto
                 returnItems[index] = dto;
             }
 
-            if (programTuples is not null)
-            {
-                LivetvManager.AddInfoToProgramDto(programTuples, options.Fields, user).GetAwaiter().GetResult();
-            }
-
-            if (channelTuples is not null)
-            {
-                LivetvManager.AddChannelInfo(channelTuples, options, user);
-            }
-
             return returnItems;
         }
 
         public BaseItemDto GetBaseItemDto(BaseItem item, DtoOptions options, User? user = null, BaseItem? owner = null)
         {
             var dto = GetBaseItemDtoInternal(item, options, user, owner, null);
-            if (item is LiveTvChannel tvChannel)
-            {
-                LivetvManager.AddChannelInfo(new[] { (dto, tvChannel) }, options, user);
-            }
-            else if (item is LiveTvProgram)
-            {
-                LivetvManager.AddInfoToProgramDto(new[] { (item, dto) }, options.Fields, user).GetAwaiter().GetResult();
-            }
-
             if (options.ContainsField(ItemFields.ItemCounts))
             {
                 SetItemByNameInfo(dto, user);
@@ -354,11 +310,6 @@ namespace Emby.Server.Implementations.Dto
             {
                 ServerId = _appHost.SystemId
             };
-
-            if (item.SourceType == SourceType.Channel)
-            {
-                dto.SourceType = item.SourceType.ToString();
-            }
 
             if (options.ContainsField(ItemFields.People))
             {
@@ -438,22 +389,6 @@ namespace Emby.Server.Implementations.Dto
             if (options.ContainsField(ItemFields.Etag))
             {
                 dto.Etag = item.GetEtag(user);
-            }
-
-            var activeRecording = _recordingsManager.GetActiveRecordingInfo(item.Path);
-            if (activeRecording is not null)
-            {
-                dto.Type = BaseItemKind.Recording;
-                dto.CanDownload = false;
-                dto.RunTimeTicks = null;
-
-                if (!string.IsNullOrEmpty(dto.SeriesName))
-                {
-                    dto.EpisodeTitle = dto.Name;
-                    dto.Name = dto.SeriesName;
-                }
-
-                LivetvManager.AddInfoToRecordingDto(item, dto, activeRecording, user);
             }
 
             if (item is Audio audio)
@@ -558,7 +493,6 @@ namespace Emby.Server.Implementations.Dto
             dto.EpisodeCount = counts.EpisodeCount;
             dto.MovieCount = counts.MovieCount;
             dto.MusicVideoCount = counts.MusicVideoCount;
-            dto.ProgramCount = counts.ProgramCount;
             dto.SeriesCount = counts.SeriesCount;
             dto.SongCount = counts.SongCount;
             dto.TrailerCount = counts.TrailerCount;
@@ -591,7 +525,6 @@ namespace Emby.Server.Implementations.Dto
                 dto.TrailerCount = taggedItems.Count(i => i is Trailer);
                 dto.MusicVideoCount = taggedItems.Count(i => i is MusicVideo);
                 dto.SeriesCount = taggedItems.Count(i => i is Series);
-                dto.ProgramCount = taggedItems.Count(i => i is LiveTvProgram);
                 dto.SongCount = taggedItems.Count(i => i is Audio);
             }
 
@@ -632,7 +565,7 @@ namespace Emby.Server.Implementations.Dto
                     }
                 }
 
-                if (!dto.ChildCount.HasValue && item.SourceType == SourceType.Library)
+                if (!dto.ChildCount.HasValue)
                 {
                     // For these types we can try to optimize and assume these values will be equal
                     if (item is MusicAlbum || item is Season || item is Playlist)
@@ -1189,10 +1122,7 @@ namespace Emby.Server.Implementations.Dto
 
             dto.MediaType = item.MediaType;
 
-            if (item is not LiveTvProgram)
-            {
-                dto.LocationType = item.LocationType;
-            }
+            dto.LocationType = item.LocationType;
 
             dto.Audio = item.Audio;
 
@@ -1244,11 +1174,6 @@ namespace Emby.Server.Implementations.Dto
             if (options.ContainsField(ItemFields.Path))
             {
                 dto.Path = GetMappedPath(item, owner);
-            }
-
-            if (options.ContainsField(ItemFields.EnableMediaSourceDisplay))
-            {
-                dto.EnableMediaSourceDisplay = item.EnableMediaSourceDisplay;
             }
 
             dto.PremiereDate = item.PremiereDate;
@@ -1473,17 +1398,10 @@ namespace Emby.Server.Implementations.Dto
 
                     if (dto.MediaSources is not null && dto.MediaSources.Length > 0)
                     {
-                        if (item.SourceType == SourceType.Channel)
-                        {
-                            mediaStreams = dto.MediaSources[0].MediaStreams.ToArray();
-                        }
-                        else
-                        {
-                            string id = item.Id.ToString("N", CultureInfo.InvariantCulture);
-                            mediaStreams = dto.MediaSources.Where(i => string.Equals(i.Id, id, StringComparison.OrdinalIgnoreCase))
-                                .SelectMany(i => i.MediaStreams)
-                                .ToArray();
-                        }
+                        string id = item.Id.ToString("N", CultureInfo.InvariantCulture);
+                        mediaStreams = dto.MediaSources.Where(i => string.Equals(i.Id, id, StringComparison.OrdinalIgnoreCase))
+                            .SelectMany(i => i.MediaStreams)
+                            .ToArray();
                     }
                     else
                     {
@@ -1670,16 +1588,6 @@ namespace Emby.Server.Implementations.Dto
                 SetPhotoProperties(dto, photo);
             }
 
-            dto.ChannelId = item.ChannelId;
-
-            if (item.SourceType == SourceType.Channel)
-            {
-                var channel = _libraryManager.GetItemById(item.ChannelId);
-                if (channel is not null)
-                {
-                    dto.ChannelName = channel.Name;
-                }
-            }
         }
 
         private BaseItem? GetImageDisplayParent(BaseItem currentItem, BaseItem originalItem, IReadOnlyDictionary<string, MusicArtist[]>? artistsBatch)
@@ -1695,7 +1603,7 @@ namespace Emby.Server.Implementations.Dto
 
             var parent = currentItem.DisplayParent ?? currentItem.GetOwner() ?? currentItem.GetParent();
 
-            if (parent is null && originalItem is not UserRootFolder && originalItem is not UserView && originalItem is not AggregateFolder && originalItem is not ICollectionFolder && originalItem is not Channel)
+            if (parent is null && originalItem is not UserRootFolder && originalItem is not UserView && originalItem is not AggregateFolder && originalItem is not ICollectionFolder)
             {
                 parent = _libraryManager.GetCollectionFolders(originalItem).FirstOrDefault();
             }

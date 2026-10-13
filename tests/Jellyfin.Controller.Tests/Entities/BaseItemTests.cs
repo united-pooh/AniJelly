@@ -13,7 +13,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
@@ -549,10 +548,6 @@ public class BaseItemTests
         libraryManager.Setup(x => x.GetItemById(alt1.Id)).Returns(alt1);
         libraryManager.Setup(x => x.GetItemById(alt2.Id)).Returns(alt2);
         libraryManager.Setup(x => x.GetItemById(primary.Id)).Returns(primary);
-
-        var recordingsManager = new Mock<IRecordingsManager>();
-        recordingsManager.Setup(x => x.GetActiveRecordingInfo(It.IsAny<string>())).Returns((ActiveRecordingInfo?)null);
-        Video.RecordingsManager = recordingsManager.Object;
 
         BaseItem.MediaSourceManager = mediaSourceManager.Object;
         BaseItem.LibraryManager = libraryManager.Object;

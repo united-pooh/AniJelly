@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,7 +24,6 @@ public sealed class ItemPersistenceOwnedRowTests : SqliteDbTestFixture
     private readonly ItemPersistenceService _service;
     private readonly ILibraryManager? _previousLibraryManager;
     private readonly IServerConfigurationManager? _previousConfigurationManager;
-    private readonly IRecordingsManager? _previousRecordingsManager;
     private readonly Guid _userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public ItemPersistenceOwnedRowTests()
@@ -33,7 +31,6 @@ public sealed class ItemPersistenceOwnedRowTests : SqliteDbTestFixture
         // BaseItem resolves these through process-wide statics; restored in Dispose.
         _previousLibraryManager = BaseItem.LibraryManager;
         _previousConfigurationManager = BaseItem.ConfigurationManager;
-        _previousRecordingsManager = Video.RecordingsManager;
 
         var libraryManager = new Mock<ILibraryManager>();
         libraryManager.Setup(l => l.GetCollectionFolders(It.IsAny<BaseItem>()))
@@ -43,9 +40,6 @@ public sealed class ItemPersistenceOwnedRowTests : SqliteDbTestFixture
         var configurationManager = new Mock<IServerConfigurationManager>();
         configurationManager.Setup(c => c.Configuration).Returns(new ServerConfiguration());
         BaseItem.ConfigurationManager = configurationManager.Object;
-
-        // Video.SourceType consults this before it can produce user data keys.
-        Video.RecordingsManager = new Mock<IRecordingsManager>().Object;
 
         _service = new ItemPersistenceService(
             CreateDbContextFactory(),
@@ -57,7 +51,6 @@ public sealed class ItemPersistenceOwnedRowTests : SqliteDbTestFixture
     {
         BaseItem.LibraryManager = _previousLibraryManager!;
         BaseItem.ConfigurationManager = _previousConfigurationManager!;
-        Video.RecordingsManager = _previousRecordingsManager!;
         base.Dispose(disposing);
     }
 

@@ -11,7 +11,6 @@ using Jellyfin.Database.Implementations.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -315,13 +314,9 @@ namespace Jellyfin.Server.Implementations.Tests.Library
             libraryManager.Setup(x => x.GetItemById(alt1.Id)).Returns(alt1);
             libraryManager.Setup(x => x.GetItemById(alt2.Id)).Returns(alt2);
 
-            var recordingsManager = new Mock<IRecordingsManager>();
-            recordingsManager.Setup(x => x.GetActiveRecordingInfo(It.IsAny<string>())).Returns((ActiveRecordingInfo?)null);
-
             BaseItem.MediaSegmentManager = segmentManager.Object;
             BaseItem.MediaSourceManager = mediaSourceManager.Object;
             BaseItem.LibraryManager = libraryManager.Object;
-            Video.RecordingsManager = recordingsManager.Object;
 
             return (primary, alt1, alt2);
         }

@@ -1,0 +1,24 @@
+name: anijelly-night-signal
+
+services:
+  web:
+    image: anijelly-night-signal:local
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:${NIGHT_SIGNAL_PORT:-18777}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - jellyfin
+    restart: unless-stopped
+
+networks:
+  jellyfin:
+    external: true
+    name: ${JELLYFIN_NETWORK:-anijelly_default}

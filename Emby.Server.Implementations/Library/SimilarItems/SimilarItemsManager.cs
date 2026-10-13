@@ -329,7 +329,6 @@ public class SimilarItemsManager : ISimilarItemsManager
         if (_serverConfigurationManager.Configuration.EnableExternalContentInSuggestions)
         {
             itemTypes.Add(BaseItemKind.Trailer);
-            itemTypes.Add(BaseItemKind.LiveTvProgram);
         }
 
         var likedMovies = _libraryManager.GetItemList(new InternalItemsQuery(user)

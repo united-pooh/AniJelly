@@ -31,6 +31,23 @@ public class StartupControllerTests
             typeof(DefaultPasswordResetProvider).FullName!);
 
     [Fact]
+    public async Task UpdateStartupUser_WhenNoUserExists_InitializesAndSetsPassword()
+    {
+        var user = CreateUser();
+        User? initializedUser = null;
+        _mockUserManager.Setup(m => m.GetFirstUser()).Returns(() => initializedUser);
+        _mockUserManager.Setup(m => m.InitializeAsync())
+            .Callback(() => initializedUser = user)
+            .Returns(Task.CompletedTask);
+
+        var result = await _subject.UpdateStartupUser(new StartupUserDto { Name = user.Username, Password = "first-pw" });
+
+        Assert.IsType<NoContentResult>(result);
+        _mockUserManager.Verify(m => m.InitializeAsync(), Times.Once);
+        _mockUserManager.Verify(m => m.ChangePassword(user.Id, "first-pw"), Times.Once);
+    }
+
+    [Fact]
     public async Task UpdateStartupUser_WhenNoUserExists_ReturnsNotFound()
     {
         _mockUserManager.Setup(m => m.GetFirstUser()).Returns((User?)null);

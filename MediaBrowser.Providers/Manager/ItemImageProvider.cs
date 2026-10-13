@@ -13,7 +13,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Drawing;
@@ -622,11 +621,6 @@ namespace MediaBrowser.Providers.Manager
 
         private bool EnableImageStub(BaseItem item)
         {
-            if (item is LiveTvProgram)
-            {
-                return true;
-            }
-
             if (!item.IsFileProtocol)
             {
                 return true;

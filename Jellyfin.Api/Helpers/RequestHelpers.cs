@@ -166,7 +166,6 @@ public static class RequestHelpers
             if (counts is not null)
             {
                 dto.ChildCount = counts.ItemCount;
-                dto.ProgramCount = counts.ProgramCount;
                 dto.SeriesCount = counts.SeriesCount;
                 dto.EpisodeCount = counts.EpisodeCount;
                 dto.MovieCount = counts.MovieCount;

@@ -13,7 +13,6 @@ using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Trickplay;
 using MediaBrowser.Model.Entities;
@@ -44,19 +43,14 @@ public class DtoServiceTests
         var appHost = new Mock<IApplicationHost>();
         appHost.Setup(x => x.SystemId).Returns("test-server");
 
-        // Video.SourceType probes the active-recording manager; provide one so it doesn't NRE.
-        Video.RecordingsManager = new Mock<IRecordingsManager>().Object;
-
         _dtoService = new DtoService(
             NullLogger<DtoService>.Instance,
             _libraryManagerMock.Object,
             _userDataManagerMock.Object,
             imageProcessor.Object,
             new Mock<IProviderManager>().Object,
-            new Mock<IRecordingsManager>().Object,
             appHost.Object,
             new Mock<IMediaSourceManager>().Object,
-            new Lazy<ILiveTvManager>(() => new Mock<ILiveTvManager>().Object),
             new Mock<ITrickplayManager>().Object,
             new Mock<IChapterManager>().Object);
 

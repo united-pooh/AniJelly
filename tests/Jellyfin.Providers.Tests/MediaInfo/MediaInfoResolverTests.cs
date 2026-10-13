@@ -10,7 +10,6 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
@@ -36,9 +35,6 @@ public class MediaInfoResolverTests
 
     public MediaInfoResolverTests()
     {
-        // prep BaseItem and Video for calls made that expect managers
-        Video.RecordingsManager = Mock.Of<IRecordingsManager>();
-
         var applicationPaths = new Mock<IServerApplicationPaths>().Object;
         var serverConfig = new Mock<IServerConfigurationManager>();
         serverConfig.Setup(c => c.ApplicationPaths)

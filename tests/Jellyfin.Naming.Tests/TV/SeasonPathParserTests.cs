@@ -6,6 +6,67 @@ namespace Jellyfin.Naming.Tests.TV;
 public class SeasonPathParserTests
 {
     [Theory]
+    [InlineData("SP", 0)]
+    [InlineData("SPs", 0)]
+    [InlineData("sps", 0)]
+    [InlineData("特典", 0)]
+    [InlineData("特别篇", 0)]
+    [InlineData("特別篇", 0)]
+    [InlineData("第1季", 1)]
+    [InlineData("第二季", 2)]
+    [InlineData("第02期", 2)]
+    [InlineData("第两季", 2)]
+    [InlineData("第兩期", 2)]
+    [InlineData("第十季", 10)]
+    [InlineData("第十二季", 12)]
+    [InlineData("第二十季", 20)]
+    [InlineData("第九十九季", 99)]
+    [InlineData("作品 第二季 [1080p]", 2)]
+    [InlineData("第二季 [tmdbid=123]", 2)]
+    [InlineData("作品 特典", 0)]
+    public void Parse_AnimeSeasonFolder_PreservesSeasonNumber(string folder, int expected)
+    {
+        var result = SeasonPathParser.Parse("/Anime/作品/" + folder, "/Anime/作品", true, true);
+
+        Assert.True(result.Success);
+        Assert.True(result.IsSeasonFolder);
+        Assert.Equal(expected, result.SeasonNumber);
+    }
+
+    [Theory]
+    [InlineData("CDs")]
+    [InlineData("NCOP")]
+    [InlineData("NCED")]
+    [InlineData("SPs Collection")]
+    [InlineData("特典音乐")]
+    [InlineData("第二季第1集")]
+    [InlineData("第二季01话")]
+    [InlineData("第二季 E01")]
+    [InlineData("第二季第兩集")]
+    [InlineData("第十一二季")]
+    [InlineData("第十十季")]
+    [InlineData("第999999999999季")]
+    public void Parse_NotSeasonFolder_DoesNotGuess(string folder)
+    {
+        var result = SeasonPathParser.Parse("/Anime/作品/" + folder, "/Anime/作品", true, true);
+
+        Assert.False(result.Success);
+        Assert.Null(result.SeasonNumber);
+    }
+
+    [Theory]
+    [InlineData("SPs")]
+    [InlineData("特典")]
+    [InlineData("特别篇")]
+    public void Parse_SpecialAliasesDisabled_DoesNotResolveAnimeSpecials(string folder)
+    {
+        var result = SeasonPathParser.Parse("/Anime/作品/" + folder, "/Anime/作品", false, false);
+
+        Assert.False(result.Success);
+        Assert.Null(result.SeasonNumber);
+    }
+
+    [Theory]
     [InlineData("/Drive/Season 1", "/Drive", 1, true)]
     [InlineData("/Drive/SEASON 1", "/Drive", 1, true)]
     [InlineData("/Drive/Staffel 1", "/Drive", 1, true)]

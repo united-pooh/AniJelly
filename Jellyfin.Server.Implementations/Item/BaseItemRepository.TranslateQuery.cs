@@ -92,6 +92,8 @@ public sealed partial class BaseItemRepository
         var maxWidth = filter.MaxWidth;
         var now = DateTime.UtcNow;
 
+        baseQuery = ExcludeRetiredItems(baseQuery);
+
         if (filter.IsHD.HasValue || filter.Is4K.HasValue)
         {
             bool includeSD = false;
@@ -312,11 +314,6 @@ public sealed partial class BaseItemRepository
             baseQuery = baseQuery.WhereOneOrMany(types, f => f.Type);
         }
 
-        if (filter.ChannelIds.Count > 0)
-        {
-            baseQuery = baseQuery.Where(e => e.ChannelId != null && filter.ChannelIds.Contains(e.ChannelId.Value));
-        }
-
         if (!filter.ParentId.IsEmpty())
         {
             baseQuery = baseQuery.Where(e => e.ParentId!.Value == filter.ParentId);
@@ -379,41 +376,6 @@ public sealed partial class BaseItemRepository
             baseQuery = baseQuery.Where(e => e.ParentIndexNumber != filter.ParentIndexNumberNotEquals.Value || e.ParentIndexNumber == null);
         }
 
-        var minEndDate = filter.MinEndDate;
-        var maxEndDate = filter.MaxEndDate;
-
-        if (filter.HasAired.HasValue)
-        {
-            if (filter.HasAired.Value)
-            {
-                maxEndDate = DateTime.UtcNow;
-            }
-            else
-            {
-                minEndDate = DateTime.UtcNow;
-            }
-        }
-
-        if (minEndDate.HasValue)
-        {
-            baseQuery = baseQuery.Where(e => e.EndDate >= minEndDate);
-        }
-
-        if (maxEndDate.HasValue)
-        {
-            baseQuery = baseQuery.Where(e => e.EndDate <= maxEndDate);
-        }
-
-        if (filter.MinStartDate.HasValue)
-        {
-            baseQuery = baseQuery.Where(e => e.StartDate >= filter.MinStartDate.Value);
-        }
-
-        if (filter.MaxStartDate.HasValue)
-        {
-            baseQuery = baseQuery.Where(e => e.StartDate <= filter.MaxStartDate.Value);
-        }
-
         if (filter.MinPremiereDate.HasValue)
         {
             baseQuery = baseQuery.Where(e => e.PremiereDate >= filter.MinPremiereDate.Value);
@@ -428,18 +390,6 @@ public sealed partial class BaseItemRepository
         {
             var trailerTypes = filter.TrailerTypes.Select(e => (int)e).ToArray();
             baseQuery = baseQuery.Where(e => e.TrailerTypes!.Any(w => trailerTypes.Contains(w.Id)));
-        }
-
-        if (filter.IsAiring.HasValue)
-        {
-            if (filter.IsAiring.Value)
-            {
-                baseQuery = baseQuery.Where(e => e.StartDate <= now && e.EndDate >= now);
-            }
-            else
-            {
-                baseQuery = baseQuery.Where(e => e.StartDate > now || e.EndDate < now);
-            }
         }
 
         if (filter.PersonIds.Length > 0)
@@ -462,16 +412,6 @@ public sealed partial class BaseItemRepository
         {
             var personTypes = filter.PersonTypes;
             baseQuery = baseQuery.Where(e => e.Peoples!.Any(f => f.People.Name == filter.Person && (personTypes.Length == 0 || personTypes.Contains(f.People.PersonType))));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.ExternalSeriesId))
-        {
-            baseQuery = baseQuery.Where(e => e.ExternalSeriesId == filter.ExternalSeriesId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.ExternalId))
-        {
-            baseQuery = baseQuery.Where(e => e.ExternalId == filter.ExternalId);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Name))

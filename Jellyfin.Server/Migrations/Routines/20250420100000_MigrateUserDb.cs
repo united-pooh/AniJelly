@@ -160,8 +160,6 @@ public class MigrateUserDb : IMigrationRoutine
                 user.SetPermission(PermissionKind.IsDisabled, policy.IsDisabled);
                 user.SetPermission(PermissionKind.EnableSharedDeviceControl, policy.EnableSharedDeviceControl);
                 user.SetPermission(PermissionKind.EnableRemoteAccess, policy.EnableRemoteAccess);
-                user.SetPermission(PermissionKind.EnableLiveTvManagement, policy.EnableLiveTvManagement);
-                user.SetPermission(PermissionKind.EnableLiveTvAccess, policy.EnableLiveTvAccess);
                 user.SetPermission(PermissionKind.EnableMediaPlayback, policy.EnableMediaPlayback);
                 user.SetPermission(PermissionKind.EnableAudioPlaybackTranscoding, policy.EnableAudioPlaybackTranscoding);
                 user.SetPermission(PermissionKind.EnableVideoPlaybackTranscoding, policy.EnableVideoPlaybackTranscoding);
@@ -169,7 +167,6 @@ public class MigrateUserDb : IMigrationRoutine
                 user.SetPermission(PermissionKind.EnableContentDownloading, policy.EnableContentDownloading);
                 user.SetPermission(PermissionKind.EnableSyncTranscoding, policy.EnableSyncTranscoding);
                 user.SetPermission(PermissionKind.EnableMediaConversion, policy.EnableMediaConversion);
-                user.SetPermission(PermissionKind.EnableAllChannels, policy.EnableAllChannels);
                 user.SetPermission(PermissionKind.EnableAllDevices, policy.EnableAllDevices);
                 user.SetPermission(PermissionKind.EnableAllFolders, policy.EnableAllFolders);
                 user.SetPermission(PermissionKind.EnableRemoteControlOfOtherUsers, policy.EnableRemoteControlOfOtherUsers);
@@ -184,7 +181,6 @@ public class MigrateUserDb : IMigrationRoutine
                 }
 
                 user.SetPreference(PreferenceKind.BlockedTags, policy.BlockedTags);
-                user.SetPreference(PreferenceKind.EnabledChannels, policy.EnabledChannels);
                 user.SetPreference(PreferenceKind.EnabledDevices, policy.EnabledDevices);
                 user.SetPreference(PreferenceKind.EnabledFolders, policy.EnabledFolders);
                 user.SetPreference(PreferenceKind.EnableContentDeletionFromFolders, policy.EnableContentDeletionFromFolders);

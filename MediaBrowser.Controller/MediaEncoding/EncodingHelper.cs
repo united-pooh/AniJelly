@@ -2589,7 +2589,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (request.VideoBitRate.HasValue
                 && (!videoStream.BitRate.HasValue || videoStream.BitRate.Value > request.VideoBitRate.Value))
             {
-                // For LiveTV that has no bitrate, let's try copy if other conditions are met
+                // Open streams may lack bitrate metadata; other copy constraints still apply.
                 if (string.IsNullOrWhiteSpace(request.LiveStreamId) || videoStream.BitRate.HasValue)
                 {
                     return false;
@@ -2773,8 +2773,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Without this cap, plugin-provided MPEG-TS streams with no usable bitrate metadata
             // can produce unreasonably large -bufsize/-maxrate values for the encoder.
             // Note: the existing FallbackMaxStreamingBitrate mechanism (default 30 Mbps) only
-            // applies when a LiveStreamId is set (M3U/HDHR sources). Plugin streams and other
-            // sources that bypass the LiveTV pipeline are not covered by it.
+            // applies when a LiveStreamId is set. Direct plugin and remote sources
+            // without an opened stream are not covered by it.
             const int MaxSaneBitrate = 400_000_000; // 400 Mbps
             return Math.Min(bitrate ?? 0, MaxSaneBitrate);
         }

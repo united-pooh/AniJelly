@@ -10,7 +10,6 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Controller.Resolvers;
@@ -58,7 +57,6 @@ public sealed class ParentalRatingScoreTests : IDisposable
         localizationManagerMock.Setup(l => l.GetRatingScore("G", It.IsAny<string>())).Returns(new ParentalRatingScore(0, null));
         localizationManagerMock.Setup(l => l.GetRatingScore("XXX", It.IsAny<string>())).Returns(new ParentalRatingScore(1000, null));
         BaseItem.LocalizationManager = localizationManagerMock.Object;
-        Video.RecordingsManager ??= fixture.Create<IRecordingsManager>();
     }
 
     public void Dispose()

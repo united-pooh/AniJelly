@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Linq;
 using Emby.Naming.Audio;
 using Emby.Naming.Common;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Resolvers;
 using MediaBrowser.Model.IO;
 
@@ -56,6 +58,12 @@ namespace Emby.Server.Implementations.Library
 
             if (fileInfo.IsDirectory)
             {
+                if (fileInfo.Name.Equals("CDs", StringComparison.OrdinalIgnoreCase)
+                    && (parent is Series or Season || parent.GetParents().Any(item => item is Series)))
+                {
+                    return true;
+                }
+
                 // Ignore extras for unsupported types
                 return _namingOptions.AllExtrasTypesFolderNames.ContainsKey(fileInfo.Name)
                     && parent is not UserRootFolder;

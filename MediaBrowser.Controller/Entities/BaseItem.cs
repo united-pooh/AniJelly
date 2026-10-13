@@ -18,7 +18,6 @@ using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Chapters;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Dto;
@@ -163,13 +162,6 @@ namespace MediaBrowser.Controller.Entities
         [JsonIgnore]
         public float? NormalizationGain { get; set; }
 
-        /// <summary>
-        /// Gets or sets the channel identifier.
-        /// </summary>
-        /// <value>The channel identifier.</value>
-        [JsonIgnore]
-        public Guid ChannelId { get; set; }
-
         [JsonIgnore]
         public virtual bool SupportsAddingToPlaylist => false;
 
@@ -270,20 +262,6 @@ namespace MediaBrowser.Controller.Entities
         [JsonIgnore]
         public virtual string Path { get; set; }
 
-        [JsonIgnore]
-        public virtual SourceType SourceType
-        {
-            get
-            {
-                if (!ChannelId.IsEmpty())
-                {
-                    return SourceType.Channel;
-                }
-
-                return SourceType.Library;
-            }
-        }
-
         /// <summary>
         /// Gets the folder containing the item.
         /// If the item is a folder, it returns the folder itself.
@@ -302,25 +280,6 @@ namespace MediaBrowser.Controller.Entities
             }
         }
 
-        /// <summary>
-        /// Gets or sets the name of the service.
-        /// </summary>
-        /// <value>The name of the service.</value>
-        [JsonIgnore]
-        public string ServiceName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the external id.
-        /// </summary>
-        /// <remarks>
-        /// If this content came from an external service, the id of the content on that service.
-        /// </remarks>
-        [JsonIgnore]
-        public string ExternalId { get; set; }
-
-        [JsonIgnore]
-        public string ExternalSeriesId { get; set; }
-
         [JsonIgnore]
         public virtual bool IsHidden => false;
 
@@ -336,11 +295,6 @@ namespace MediaBrowser.Controller.Entities
                 var path = Path;
                 if (string.IsNullOrEmpty(path))
                 {
-                    if (SourceType == SourceType.Channel)
-                    {
-                        return LocationType.Remote;
-                    }
-
                     return LocationType.Virtual;
                 }
 
@@ -371,18 +325,7 @@ namespace MediaBrowser.Controller.Entities
         public bool HasPathProtocol => PathProtocol.HasValue;
 
         [JsonIgnore]
-        public virtual bool SupportsLocalMetadata
-        {
-            get
-            {
-                if (SourceType == SourceType.Channel)
-                {
-                    return false;
-                }
-
-                return IsFileProtocol;
-            }
-        }
+        public virtual bool SupportsLocalMetadata => IsFileProtocol;
 
         [JsonIgnore]
         public virtual string FileNameWithoutExtension
@@ -472,20 +415,6 @@ namespace MediaBrowser.Controller.Entities
         }
 
         [JsonIgnore]
-        public bool EnableMediaSourceDisplay
-        {
-            get
-            {
-                if (SourceType == SourceType.Channel)
-                {
-                    return ChannelManager.EnableMediaSourceDisplay(this);
-                }
-
-                return true;
-            }
-        }
-
-        [JsonIgnore]
         public Guid ParentId { get; set; }
 
         /// <summary>
@@ -510,8 +439,6 @@ namespace MediaBrowser.Controller.Entities
         public static IFileSystem FileSystem { get; set; }
 
         public static IUserDataManager UserDataManager { get; set; }
-
-        public static IChannelManager ChannelManager { get; set; }
 
         public static IMediaSourceManager MediaSourceManager { get; set; }
 
@@ -747,17 +674,9 @@ namespace MediaBrowser.Controller.Entities
         {
             get
             {
-                if (this is BasePluginFolder || this is Channel)
+                if (this is BasePluginFolder)
                 {
                     return true;
-                }
-
-                if (this is IHasCollectionType view)
-                {
-                    if (view.CollectionType == CollectionType.livetv)
-                    {
-                        return true;
-                    }
                 }
 
                 if (GetParent() is AggregateFolder)
@@ -843,11 +762,6 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual bool CanDelete()
         {
-            if (SourceType == SourceType.Channel)
-            {
-                return ChannelManager.CanDelete(this);
-            }
-
             return IsFileProtocol;
         }
 
@@ -859,11 +773,6 @@ namespace MediaBrowser.Controller.Entities
             }
 
             var allowed = user.GetPreferenceValues<Guid>(PreferenceKind.EnableContentDeletionFromFolders);
-
-            if (SourceType == SourceType.Channel)
-            {
-                return allowed.Contains(ChannelId);
-            }
 
             var collectionFolders = LibraryManager.GetCollectionFolders(this, allCollectionFolders);
 
@@ -926,11 +835,6 @@ namespace MediaBrowser.Controller.Entities
 
         protected virtual string GetInternalMetadataPath(string basePath)
         {
-            if (SourceType == SourceType.Channel)
-            {
-                return System.IO.Path.Join(basePath, "channels", ChannelId.ToString("N", CultureInfo.InvariantCulture), Id.ToString("N", CultureInfo.InvariantCulture));
-            }
-
             ReadOnlySpan<char> idString = Id.ToString("N", CultureInfo.InvariantCulture);
 
             return System.IO.Path.Join(basePath, "library", idString[..2], idString);
@@ -1148,35 +1052,11 @@ namespace MediaBrowser.Controller.Entities
             });
         }
 
-        protected virtual bool IsActiveRecording()
-        {
-            return false;
-        }
-
         public virtual IReadOnlyList<MediaSourceInfo> GetMediaSources(bool enablePathSubstitution)
         {
-            if (SourceType == SourceType.Channel)
-            {
-                var sources = ChannelManager.GetStaticMediaSources(this, CancellationToken.None)
-                           .ToList();
-
-                if (sources.Count > 0)
-                {
-                    return sources;
-                }
-            }
-
             var list = GetAllItemsForMediaSources().ToList();
             var commonPrefix = GetCommonNamePrefix(list);
             var result = list.Select(i => GetVersionInfo(enablePathSubstitution, i.Item, i.MediaSourceType, commonPrefix)).ToList();
-
-            if (IsActiveRecording())
-            {
-                foreach (var mediaSource in result)
-                {
-                    mediaSource.Type = MediaSourceType.Placeholder;
-                }
-            }
 
             // The source belonging to the item being queried sorts first so it is the default the client plays.
             var selfId = Id.ToString("N", CultureInfo.InvariantCulture);
@@ -1732,18 +1612,7 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual List<string> GetUserDataKeys()
         {
-            var list = new List<string>();
-
-            if (SourceType == SourceType.Channel)
-            {
-                if (!string.IsNullOrEmpty(ExternalId))
-                {
-                    list.Add(ExternalId);
-                }
-            }
-
-            list.Add(Id.ToString());
-            return list;
+            return [Id.ToString()];
         }
 
         internal virtual ItemUpdateType UpdateFromResolvedItem(BaseItem newItem)
@@ -1845,11 +1714,6 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual bool IsSaveLocalMetadataEnabled()
         {
-            if (SourceType == SourceType.Channel)
-            {
-                return false;
-            }
-
             var libraryOptions = LibraryManager.GetLibraryOptions(this);
 
             return libraryOptions.SaveLocalMetadata;
@@ -1999,11 +1863,6 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual UnratedItem GetBlockUnratedType()
         {
-            if (SourceType == SourceType.Channel)
-            {
-                return UnratedItem.ChannelContent;
-            }
-
             return UnratedItem.Other;
         }
 
@@ -2041,21 +1900,11 @@ namespace MediaBrowser.Controller.Entities
 
         public virtual bool IsVisibleStandalone(User user)
         {
-            if (SourceType == SourceType.Channel)
-            {
-                return IsVisibleStandaloneInternal(user, false) && Channel.IsChannelVisible(this, user);
-            }
-
             return IsVisibleStandaloneInternal(user, true);
         }
 
         public virtual string GetClientTypeName()
         {
-            if (IsFolder && SourceType == SourceType.Channel && this is not Channel && this is not Season && this is not Series)
-            {
-                return "ChannelFolderItem";
-            }
-
             return GetType().Name;
         }
 

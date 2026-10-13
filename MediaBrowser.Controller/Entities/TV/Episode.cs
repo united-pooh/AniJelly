@@ -144,12 +144,6 @@ namespace MediaBrowser.Controller.Entities.TV
 
         public override double GetDefaultPrimaryImageAspectRatio()
         {
-            // hack for tv plugins
-            if (SourceType == SourceType.Channel)
-            {
-                return 0;
-            }
-
             return 16.0 / 9;
         }
 
@@ -331,52 +325,49 @@ namespace MediaBrowser.Controller.Entities.TV
 
             if (!IsLocked)
             {
-                if (SourceType == SourceType.Library || SourceType == SourceType.LiveTV)
+                var libraryOptions = LibraryManager.GetLibraryOptions(this);
+                if (libraryOptions.EnableEmbeddedEpisodeInfos && string.Equals(Container, "mp4", StringComparison.OrdinalIgnoreCase))
                 {
-                    var libraryOptions = LibraryManager.GetLibraryOptions(this);
-                    if (libraryOptions.EnableEmbeddedEpisodeInfos && string.Equals(Container, "mp4", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try
-                        {
-                            var mediaInfo = MediaEncoder.GetMediaInfo(
-                                new MediaInfoRequest
-                                {
-                                    MediaSource = GetMediaSources(false)[0],
-                                    MediaType = DlnaProfileType.Video
-                                },
-                                CancellationToken.None).GetAwaiter().GetResult();
-                            if (mediaInfo.ParentIndexNumber > 0)
-                            {
-                                ParentIndexNumber = mediaInfo.ParentIndexNumber;
-                            }
-
-                            if (mediaInfo.IndexNumber > 0)
-                            {
-                                IndexNumber = mediaInfo.IndexNumber;
-                            }
-
-                            if (!string.IsNullOrEmpty(mediaInfo.ShowName))
-                            {
-                                SeriesName = mediaInfo.ShowName;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Error reading the episode information with ffprobe. Episode: {EpisodeInfo}", Path);
-                        }
-                    }
-
                     try
                     {
-                        if (LibraryManager.FillMissingEpisodeNumbersFromPath(this, replaceAllMetadata))
+                        var mediaInfo = MediaEncoder.GetMediaInfo(
+                            new MediaInfoRequest
+                            {
+                                MediaSource = GetMediaSources(false)[0],
+                                MediaType = DlnaProfileType.Video
+                            },
+                            CancellationToken.None).GetAwaiter().GetResult();
+                        if (mediaInfo.ParentIndexNumber > 0)
                         {
-                            hasChanges = true;
+                            ParentIndexNumber = mediaInfo.ParentIndexNumber;
+                        }
+
+                        if (mediaInfo.IndexNumber > 0)
+                        {
+                            IndexNumber = mediaInfo.IndexNumber;
+                        }
+
+                        if (!string.IsNullOrEmpty(mediaInfo.ShowName))
+                        {
+                            SeriesName = mediaInfo.ShowName;
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Error in FillMissingEpisodeNumbersFromPath. Episode: {Episode}", Path ?? Name ?? Id.ToString());
+                        Logger.LogError(ex, "Error reading the episode information with ffprobe. Episode: {EpisodeInfo}", Path);
                     }
+                }
+
+                try
+                {
+                    if (LibraryManager.FillMissingEpisodeNumbersFromPath(this, replaceAllMetadata))
+                    {
+                        hasChanges = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error in FillMissingEpisodeNumbersFromPath. Episode: {Episode}", Path ?? Name ?? Id.ToString());
                 }
             }
 

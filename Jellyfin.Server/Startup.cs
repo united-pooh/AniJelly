@@ -10,8 +10,6 @@ using Emby.Server.Implementations.EntryPoints;
 using Emby.Server.Implementations.Localization;
 using Jellyfin.Api.Middleware;
 using Jellyfin.Database.Implementations;
-using Jellyfin.LiveTv.Extensions;
-using Jellyfin.LiveTv.Recordings;
 using Jellyfin.MediaEncoding.Hls.Extensions;
 using Jellyfin.Networking;
 using Jellyfin.Networking.HappyEyeballs;
@@ -129,7 +127,6 @@ namespace Jellyfin.Server
                 .AddCheck<DbContextFactoryHealthCheck<JellyfinDbContext>>(nameof(JellyfinDbContext));
 
             services.AddHlsPlaylistGenerator();
-            services.AddLiveTvServices();
 
             var serverUICulture = _serverConfigurationManager.Configuration.UICulture;
             if (string.IsNullOrEmpty(serverUICulture))
@@ -150,12 +147,10 @@ namespace Jellyfin.Server
                 options.FallBackToParentUICultures = true;
             });
 
-            services.AddHostedService<RecordingsHost>();
             services.AddHostedService<AutoDiscoveryHost>();
             services.AddHostedService<NfoUserDataSaver>();
             services.AddHostedService<LibraryChangedNotifier>();
             services.AddHostedService<UserDataChangeNotifier>();
-            services.AddHostedService<RecordingNotifier>();
             services.AddHostedService<DeviceAccessHost>();
         }
 

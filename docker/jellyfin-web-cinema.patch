@@ -1,0 +1,2729 @@
+diff --git a/src/apps/dashboard/components/drawer/AppDrawer.tsx b/src/apps/dashboard/components/drawer/AppDrawer.tsx
+index 036b621fb4..d468d90c2e 100644
+--- a/src/apps/dashboard/components/drawer/AppDrawer.tsx
++++ b/src/apps/dashboard/components/drawer/AppDrawer.tsx
+@@ -1,9 +1,14 @@
+ import ListItem from '@mui/material/ListItem';
+ import List from '@mui/material/List';
++import ListItemIcon from '@mui/material/ListItemIcon';
++import ListItemText from '@mui/material/ListItemText';
+ import React, { FC } from 'react';
+ 
+ import DrawerHeaderLink from 'apps/modern/components/drawers/DrawerHeaderLink';
+ import ResponsiveDrawer, { ResponsiveDrawerProps } from 'components/ResponsiveDrawer';
++import UserAvatar from 'components/UserAvatar';
++import { useApi } from 'hooks/useApi';
++import { useUserTheme } from 'hooks/useUserTheme';
+ 
+ import ServerDrawerSection from './sections/ServerDrawerSection';
+ import DevicesDrawerSection from './sections/DevicesDrawerSection';
+@@ -15,23 +20,36 @@ const AppDrawer: FC<ResponsiveDrawerProps> = ({
+     open = false,
+     onClose,
+     onOpen
+-}) => (
+-    <ResponsiveDrawer
+-        open={open}
+-        onClose={onClose}
+-        onOpen={onOpen}
+-    >
+-        <List disablePadding>
+-            <ListItem disablePadding>
+-                <DrawerHeaderLink />
+-            </ListItem>
+-        </List>
+-        <ServerDrawerSection />
+-        <DevicesDrawerSection />
+-        <LiveTvDrawerSection />
+-        <PluginDrawerSection />
+-        <AdvancedDrawerSection />
+-    </ResponsiveDrawer>
+-);
++}) => {
++    const { user } = useApi();
++    const { dashboardTheme } = useUserTheme();
++
++    return (
++        <ResponsiveDrawer
++            open={open}
++            onClose={onClose}
++            onOpen={onOpen}
++        >
++            <List disablePadding>
++                <ListItem disablePadding>
++                    <DrawerHeaderLink isCinema={dashboardTheme === 'cinema'} />
++                </ListItem>
++                {dashboardTheme === 'cinema' && user && (
++                    <ListItem className='cinema-dashboard-account'>
++                        <ListItemIcon>
++                            <UserAvatar user={user} size={30} />
++                        </ListItemIcon>
++                        <ListItemText primary={user.Name} />
++                    </ListItem>
++                )}
++            </List>
++            <ServerDrawerSection />
++            <DevicesDrawerSection />
++            <LiveTvDrawerSection />
++            <PluginDrawerSection />
++            <AdvancedDrawerSection />
++        </ResponsiveDrawer>
++    );
++};
+ 
+ export default AppDrawer;
+diff --git a/src/apps/dashboard/routes/index.tsx b/src/apps/dashboard/routes/index.tsx
+index d50c7278df..c93162f197 100644
+--- a/src/apps/dashboard/routes/index.tsx
++++ b/src/apps/dashboard/routes/index.tsx
+@@ -3,6 +3,7 @@ import { OutboundWebSocketMessageType } from '@jellyfin/sdk/lib/websocket';
+ import Box from '@mui/material/Box';
+ import Grid from '@mui/material/Grid';
+ import Stack from '@mui/material/Stack';
++import Typography from '@mui/material/Typography';
+ import React, { useCallback, useEffect, useMemo, useState } from 'react';
+ import { useQueryClient } from '@tanstack/react-query';
+ 
+@@ -106,6 +107,7 @@ export const Component = () => {
+                 confirmButtonColor='error'
+             />
+             <Box className='content-primary'>
++                <Typography variant='h1' sx={{ mb: 3 }}>{globalize.translate('TabDashboard')}</Typography>
+                 <Grid container spacing={3}>
+                     <Grid item xs={12} md={7} lg={7} xl={6}>
+                         <Stack spacing={3}>
+diff --git a/src/apps/dashboard/routes/settings/index.tsx b/src/apps/dashboard/routes/settings/index.tsx
+index 3a3a1417aa..a8ca31830a 100644
+--- a/src/apps/dashboard/routes/settings/index.tsx
++++ b/src/apps/dashboard/routes/settings/index.tsx
+@@ -140,7 +140,7 @@ export const Component = () => {
+                 ) : (
+                     <Form method='POST'>
+                         <Stack spacing={3}>
+-                            <Typography variant='h1'>{globalize.translate('Settings')}</Typography>
++                            <Typography variant='h1'>{globalize.translate('General')}</Typography>
+ 
+                             {!isSubmitting && actionData?.isSaved && (
+                                 <Alert severity='success'>
+@@ -148,122 +148,134 @@ export const Component = () => {
+                                 </Alert>
+                             )}
+ 
+-                            <TextField
+-                                name='ServerName'
+-                                label={globalize.translate('LabelServerName')}
+-                                helperText={globalize.translate('LabelServerNameHelp')}
+-                                defaultValue={config.ServerName}
+-                            />
+-
+-                            <TextField
+-                                select
+-                                name='UICulture'
+-                                label={globalize.translate('LabelPreferredDisplayLanguage')}
+-                                helperText={(
+-                                    <>
+-                                        <span>{globalize.translate('LabelDisplayLanguageHelp')}</span>
+-                                        <Link href='https://jellyfin.org/docs/general/contributing/#translating' target='_blank'>
+-                                            {globalize.translate('LearnHowYouCanContribute')}
+-                                        </Link>
+-                                    </>
+-                                )}
+-                                defaultValue={config.UICulture}
+-                                slotProps={{
+-                                    formHelperText: { component: Stack }
+-                                }}
+-                            >
+-                                {languageOptions.map((language) =>
+-                                    <MenuItem key={language.Name} value={language.Value || ''}>{language.Name}</MenuItem>
+-                                )}
+-                            </TextField>
+-
+-                            <Typography variant='h2'>{globalize.translate('HeaderPaths')}</Typography>
+-
+-                            <TextField
+-                                name='CachePath'
+-                                label={globalize.translate('LabelCachePath')}
+-                                helperText={globalize.translate('LabelCachePathHelp')}
+-                                value={cachePath}
+-                                onChange={onCachePathChange}
+-                                slotProps={{
+-                                    input: {
+-                                        endAdornment: (
+-                                            <InputAdornment position='end'>
+-                                                <IconButton edge='end' onClick={showCachePathPicker}>
+-                                                    <SearchIcon />
+-                                                </IconButton>
+-                                            </InputAdornment>
+-                                        )
+-                                    }
+-                                }}
+-                            />
+-
+-                            <TextField
+-                                name={'MetadataPath'}
+-                                label={globalize.translate('LabelMetadataPath')}
+-                                helperText={globalize.translate('LabelMetadataPathHelp')}
+-                                value={metadataPath}
+-                                onChange={onMetadataPathChange}
+-                                slotProps={{
+-                                    input: {
+-                                        endAdornment: (
+-                                            <InputAdornment position='end'>
+-                                                <IconButton edge='end' onClick={showMetadataPathPicker}>
+-                                                    <SearchIcon />
+-                                                </IconButton>
+-                                            </InputAdornment>
+-                                        )
+-                                    }
+-                                }}
+-                            />
+-
+-                            <Typography variant='h2'>{globalize.translate('QuickConnect')}</Typography>
+-
+-                            <FormControl>
+-                                <FormControlLabel
+-                                    control={
+-                                        <Checkbox
+-                                            name='QuickConnectAvailable'
+-                                            defaultChecked={config.QuickConnectAvailable}
+-                                        />
+-                                    }
+-                                    label={globalize.translate('EnableQuickConnect')}
++                            <Stack component='section' className='cinema-settings-group' spacing={3} aria-labelledby='settings-server'>
++                                <Typography variant='h2' id='settings-server'>{globalize.translate('TabServer')}</Typography>
++
++                                <TextField
++                                    name='ServerName'
++                                    label={globalize.translate('LabelServerName')}
++                                    helperText={globalize.translate('LabelServerNameHelp')}
++                                    defaultValue={config.ServerName}
++                                />
++
++                                <TextField
++                                    select
++                                    name='UICulture'
++                                    label={globalize.translate('LabelPreferredDisplayLanguage')}
++                                    helperText={(
++                                        <>
++                                            <span>{globalize.translate('LabelDisplayLanguageHelp')}</span>
++                                            <Link href='https://jellyfin.org/docs/general/contributing/#translating' target='_blank'>
++                                                {globalize.translate('LearnHowYouCanContribute')}
++                                            </Link>
++                                        </>
++                                    )}
++                                    defaultValue={config.UICulture}
++                                    slotProps={{
++                                        formHelperText: { component: Stack }
++                                    }}
++                                >
++                                    {languageOptions.map((language) =>
++                                        <MenuItem key={language.Name} value={language.Value || ''}>{language.Name}</MenuItem>
++                                    )}
++                                </TextField>
++                            </Stack>
++
++                            <Stack component='section' className='cinema-settings-group' spacing={3} aria-labelledby='settings-paths'>
++                                <Typography variant='h2' id='settings-paths'>{globalize.translate('HeaderPaths')}</Typography>
++
++                                <TextField
++                                    name='CachePath'
++                                    label={globalize.translate('LabelCachePath')}
++                                    helperText={globalize.translate('LabelCachePathHelp')}
++                                    value={cachePath}
++                                    onChange={onCachePathChange}
++                                    slotProps={{
++                                        input: {
++                                            endAdornment: (
++                                                <InputAdornment position='end'>
++                                                    <IconButton edge='end' onClick={showCachePathPicker} aria-label={globalize.translate('HeaderSelectServerCachePath')}>
++                                                        <SearchIcon />
++                                                    </IconButton>
++                                                </InputAdornment>
++                                            )
++                                        }
++                                    }}
++                                />
++
++                                <TextField
++                                    name={'MetadataPath'}
++                                    label={globalize.translate('LabelMetadataPath')}
++                                    helperText={globalize.translate('LabelMetadataPathHelp')}
++                                    value={metadataPath}
++                                    onChange={onMetadataPathChange}
++                                    slotProps={{
++                                        input: {
++                                            endAdornment: (
++                                                <InputAdornment position='end'>
++                                                    <IconButton edge='end' onClick={showMetadataPathPicker} aria-label={globalize.translate('HeaderSelectMetadataPath')}>
++                                                        <SearchIcon />
++                                                    </IconButton>
++                                                </InputAdornment>
++                                            )
++                                        }
++                                    }}
+                                 />
+-                            </FormControl>
+-
+-                            <Typography variant='h2'>{globalize.translate('HeaderPerformance')}</Typography>
+-
+-                            <TextField
+-                                name='LibraryScanFanoutConcurrency'
+-                                type='number'
+-                                label={globalize.translate('LibraryScanFanoutConcurrency')}
+-                                helperText={globalize.translate('LibraryScanFanoutConcurrencyHelp')}
+-                                defaultValue={config.LibraryScanFanoutConcurrency || ''}
+-                                slotProps={{
+-                                    htmlInput: {
+-                                        min: 0,
+-                                        step: 1
+-                                    }
+-                                }}
+-                            />
+-
+-                            <TextField
+-                                name='ParallelImageEncodingLimit'
+-                                type='number'
+-                                label={globalize.translate('LabelParallelImageEncodingLimit')}
+-                                helperText={globalize.translate('LabelParallelImageEncodingLimitHelp')}
+-                                defaultValue={config.ParallelImageEncodingLimit || ''}
+-                                slotProps={{
+-                                    htmlInput: {
+-                                        min: 0,
+-                                        step: 1
+-                                    }
+-                                }}
+-                            />
+-
+-                            <Button type='submit' size='large'>
+-                                {globalize.translate('Save')}
+-                            </Button>
++                            </Stack>
++
++                            <Stack component='section' className='cinema-settings-group' spacing={3} aria-labelledby='settings-quick-connect'>
++                                <Typography variant='h2' id='settings-quick-connect'>{globalize.translate('QuickConnect')}</Typography>
++
++                                <FormControl>
++                                    <FormControlLabel
++                                        control={
++                                            <Checkbox
++                                                name='QuickConnectAvailable'
++                                                defaultChecked={config.QuickConnectAvailable}
++                                            />
++                                        }
++                                        label={globalize.translate('EnableQuickConnect')}
++                                    />
++                                </FormControl>
++                            </Stack>
++
++                            <Stack component='section' className='cinema-settings-group' spacing={3} aria-labelledby='settings-performance'>
++                                <Typography variant='h2' id='settings-performance'>{globalize.translate('HeaderPerformance')}</Typography>
++
++                                <TextField
++                                    name='LibraryScanFanoutConcurrency'
++                                    type='number'
++                                    label={globalize.translate('LibraryScanFanoutConcurrency')}
++                                    helperText={globalize.translate('LibraryScanFanoutConcurrencyHelp')}
++                                    defaultValue={config.LibraryScanFanoutConcurrency || ''}
++                                    slotProps={{
++                                        htmlInput: {
++                                            min: 0,
++                                            step: 1
++                                        }
++                                    }}
++                                />
++
++                                <TextField
++                                    name='ParallelImageEncodingLimit'
++                                    type='number'
++                                    label={globalize.translate('LabelParallelImageEncodingLimit')}
++                                    helperText={globalize.translate('LabelParallelImageEncodingLimitHelp')}
++                                    defaultValue={config.ParallelImageEncodingLimit || ''}
++                                    slotProps={{
++                                        htmlInput: {
++                                            min: 0,
++                                            step: 1
++                                        }
++                                    }}
++                                />
++                            </Stack>
++
++                            <Box className='cinema-settings-actions'>
++                                <Button type='submit' size='large' disabled={isSubmitting}>
++                                    {globalize.translate('Save')}
++                                </Button>
++                            </Box>
+                         </Stack>
+                     </Form>
+                 )}
+diff --git a/src/apps/legacy/AppLayout.tsx b/src/apps/legacy/AppLayout.tsx
+index e4bd8b938f..ad94811506 100644
+--- a/src/apps/legacy/AppLayout.tsx
++++ b/src/apps/legacy/AppLayout.tsx
+@@ -4,10 +4,12 @@ import { Outlet } from 'react-router-dom';
+ import AppBody from 'components/AppBody';
+ import CustomCss from 'components/CustomCss';
+ import ThemeCss from 'components/ThemeCss';
++import CinemaSidebar from './CinemaSidebar';
+ 
+ export default function AppLayout() {
+     return (
+         <>
++            <CinemaSidebar />
+             <AppBody>
+                 <Outlet />
+             </AppBody>
+diff --git a/src/apps/legacy/CinemaSidebar.tsx b/src/apps/legacy/CinemaSidebar.tsx
+new file mode 100644
+index 0000000000..1355abfd06
+--- /dev/null
++++ b/src/apps/legacy/CinemaSidebar.tsx
+@@ -0,0 +1,33 @@
++import useMediaQuery from '@mui/material/useMediaQuery';
++import React, { useEffect } from 'react';
++import { useLocation } from 'react-router-dom';
++
++import AppDrawer, { isDrawerPath } from 'apps/modern/components/drawers/AppDrawer';
++import layoutManager from 'components/layoutManager';
++import { useApi } from 'hooks/useApi';
++import { useUserTheme } from 'hooks/useUserTheme';
++import globalize from 'lib/globalize';
++
++import '../../styles/cinema-library.scss';
++
++const onDrawerChange = () => undefined;
++
++export default function CinemaSidebar() {
++    const { user } = useApi();
++    const { theme } = useUserTheme();
++    const { pathname } = useLocation();
++    const isDesktop = useMediaQuery('(min-width: 900px)');
++    const isVisible = theme === 'cinema' && !!user && isDesktop
++        && !layoutManager.tv && isDrawerPath(pathname);
++
++    useEffect(() => {
++        document.body.classList.toggle('cinemaLibraryDocument', isVisible);
++        return () => document.body.classList.remove('cinemaLibraryDocument');
++    }, [isVisible]);
++
++    return isVisible ? (
++        <nav className='cinemaSidebar' aria-label={globalize.translate('Menu')}>
++            <AppDrawer open onOpen={onDrawerChange} onClose={onDrawerChange} />
++        </nav>
++    ) : null;
++}
+diff --git a/src/apps/legacy/controllers/home.js b/src/apps/legacy/controllers/home.js
+index 5bb591acf3..6dee31686e 100644
+--- a/src/apps/legacy/controllers/home.js
++++ b/src/apps/legacy/controllers/home.js
+@@ -49,7 +49,7 @@ class HomeView extends TabbedView {
+         }
+ 
+         const instance = this;
+-        return import(/* webpackChunkName: "[request]" */ `../controllers/${depends}`).then(({ default: ControllerFactory }) => {
++        return import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../controllers/${depends}`).then(({ default: ControllerFactory }) => {
+             let controller = instance.tabControllers[index];
+ 
+             if (!controller) {
+diff --git a/src/apps/legacy/controllers/hometab.js b/src/apps/legacy/controllers/hometab.js
+index 4f73a82d29..bfd9e75fbf 100644
+--- a/src/apps/legacy/controllers/hometab.js
++++ b/src/apps/legacy/controllers/hometab.js
+@@ -2,6 +2,7 @@ import * as userSettings from 'scripts/settings/userSettings';
+ import focusManager from 'components/focusManager';
+ import homeSections from 'components/homesections/homesections';
+ import { ServerConnections } from 'lib/jellyfin-apiclient';
++import globalize from 'lib/globalize';
+ 
+ import 'elements/emby-itemscontainer/emby-itemscontainer';
+ 
+@@ -11,9 +12,18 @@ class HomeTab {
+         this.params = params;
+         this.apiClient = ServerConnections.currentApiClient();
+         this.sectionsContainer = view.querySelector('.sections');
++        if (!view.querySelector('.cinemaHomeTitle')) {
++            const title = document.createElement('h1');
++            title.className = 'cinemaHomeTitle padded-left padded-right';
++            title.textContent = globalize.translate('Home');
++            view.insertBefore(title, this.sectionsContainer);
++        }
+         view.querySelector('.sections').addEventListener('settingschange', onHomeScreenSettingsChanged.bind(this));
+     }
+-    onResume(options) {
++    onResume(options = {}) {
++        if (!this.view) return Promise.resolve();
++        if (this.sectionsLoad) return this.sectionsLoad;
++
+         if (this.sectionsRendered) {
+             const sectionsContainer = this.sectionsContainer;
+ 
+@@ -26,17 +36,29 @@ class HomeTab {
+ 
+         const view = this.view;
+         const apiClient = this.apiClient;
++        const isCurrent = () => this.view === view;
+         this.destroyHomeSections();
+-        this.sectionsRendered = true;
+-        return apiClient.getCurrentUser()
+-            .then(user => homeSections.loadSections(view.querySelector('.sections'), apiClient, user, userSettings))
++        this.sectionsLoad = apiClient.getCurrentUser()
++            .then(user => {
++                if (isCurrent()) {
++                    return homeSections.loadSections(this.sectionsContainer, apiClient, user, userSettings, isCurrent);
++                }
++            })
+             .then(() => {
++                if (!isCurrent()) return;
++                this.sectionsRendered = true;
+                 if (options.autoFocus) {
+                     focusManager.autoFocus(view);
+                 }
+-            }).catch(err => {
+-                console.error(err);
++            }).finally(() => {
++                this.sectionsLoad = null;
+             });
++        // Legacy event handlers ignore the promise; report errors without changing its result.
++        this.sectionsLoad.catch(err => {
++            this.sectionsRendered = false;
++            console.error('Error loading home sections', err);
++        });
++        return this.sectionsLoad;
+     }
+     onPause() {
+         const sectionsContainer = this.sectionsContainer;
+@@ -46,6 +68,7 @@ class HomeTab {
+         }
+     }
+     destroy() {
++        this.sectionsRendered = false;
+         this.view = null;
+         this.params = null;
+         this.apiClient = null;
+diff --git a/src/apps/legacy/controllers/hometab.test.js b/src/apps/legacy/controllers/hometab.test.js
+new file mode 100644
+index 0000000000..d7f3b49030
+--- /dev/null
++++ b/src/apps/legacy/controllers/hometab.test.js
+@@ -0,0 +1,114 @@
++import { afterEach, beforeEach, expect, it, vi } from 'vitest';
++
++const mocks = vi.hoisted(() => ({ getCurrentUser: vi.fn(), fetchUserViews: vi.fn(), autoFocus: vi.fn() }));
++vi.mock('scripts/settings/userSettings', () => ({ get: vi.fn() }));
++vi.mock('components/focusManager', () => ({ default: { autoFocus: mocks.autoFocus } }));
++vi.mock('components/layoutManager', () => ({ default: { tv: false } }));
++vi.mock('lib/jellyfin-apiclient', () => ({ ServerConnections: { currentApiClient: () => ({ getCurrentUser: mocks.getCurrentUser, serverId: () => 'server' }) } }));
++vi.mock('lib/jellyfin-apiclient/ServerConnections', () => ({ default: { getApi: () => ({}) } }));
++vi.mock('hooks/api/useUserViews', () => ({ fetchUserViews: mocks.fetchUserViews }));
++vi.mock('lib/globalize', () => ({ default: { translate: key => key } }));
++vi.mock('utils/dashboard', () => ({ default: { navigate: vi.fn() } }));
++vi.mock('components/homesections/sections/activeRecordings', () => ({ loadRecordings: vi.fn() }));
++vi.mock('components/homesections/sections/libraryButtons', () => ({ loadLibraryButtons: vi.fn() }));
++vi.mock('components/homesections/sections/libraryTiles', () => ({ loadLibraryTiles: vi.fn() }));
++vi.mock('components/homesections/sections/liveTv', () => ({ loadLiveTV: vi.fn() }));
++vi.mock('components/homesections/sections/nextUp', () => ({ loadNextUp: vi.fn() }));
++vi.mock('components/homesections/sections/recentlyAdded', () => ({ loadRecentlyAdded: vi.fn() }));
++vi.mock('components/homesections/sections/resume', () => ({ loadResume: vi.fn() }));
++vi.mock('elements/emby-button/paper-icon-button-light', () => ({}));
++vi.mock('elements/emby-button/emby-button', () => ({}));
++vi.mock('elements/emby-itemscontainer/emby-itemscontainer', () => ({}));
++vi.mock('elements/emby-scroller/emby-scroller', () => ({}));
++
++import HomeTab from './hometab';
++
++let view;
++let tab;
++let completeViews;
++
++beforeEach(() => {
++    vi.clearAllMocks();
++    document.documentElement.dataset.theme = 'cinema';
++    document.body.innerHTML = '<div id="homeTab"><div class="sections"></div></div>';
++    view = document.querySelector('#homeTab');
++    mocks.getCurrentUser.mockResolvedValue({ Id: 'user', Policy: { IsAdministrator: true } });
++    mocks.fetchUserViews.mockImplementation(() => new Promise(resolve => {
++        completeViews = resolve;
++    }));
++    tab = new HomeTab(view, {});
++});
++
++afterEach(() => {
++    tab.destroy();
++    document.body.innerHTML = '';
++    delete document.documentElement.dataset.theme;
++    vi.restoreAllMocks();
++});
++
++it('shares an in-flight load and marks the page rendered only after its content is ready', async () => {
++    const first = tab.onResume({});
++    const second = tab.onResume({});
++    const markedBeforeContent = tab.sectionsRendered;
++    await vi.waitFor(() => expect(mocks.fetchUserViews).toHaveBeenCalledOnce());
++    completeViews({ Items: [] });
++    await Promise.all([first, second]);
++
++    expect(second).toBe(first);
++    expect(markedBeforeContent).not.toBe(true);
++    expect(tab.sectionsRendered).toBe(true);
++    expect(view.querySelectorAll('.cinemaEmptyLibrary')).toHaveLength(1);
++});
++
++it('does not render or focus a page destroyed while its media-library request was pending', async () => {
++    const load = tab.onResume({ autoFocus: true });
++    await vi.waitFor(() => expect(mocks.fetchUserViews).toHaveBeenCalledOnce());
++    tab.destroy();
++    completeViews({ Items: [] });
++    await load;
++
++    expect(view.querySelector('.cinemaEmptyLibrary')).toBeNull();
++    expect(mocks.autoFocus).not.toHaveBeenCalled();
++    expect(tab.sectionsRendered).not.toBe(true);
++});
++
++it('propagates a failed load and permits a later resume to load the page again', async () => {
++    const error = new Error('Request failed');
++    const reportError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
++    mocks.fetchUserViews.mockRejectedValueOnce(error);
++    await expect(tab.onResume({})).rejects.toBe(error);
++    expect(tab.sectionsRendered).not.toBe(true);
++    expect(reportError).toHaveBeenCalledWith('Error loading home sections', error);
++
++    mocks.fetchUserViews.mockResolvedValueOnce({ Items: [] });
++    await tab.onResume({});
++    expect(mocks.fetchUserViews).toHaveBeenCalledTimes(2);
++    expect(view.querySelector('.cinemaEmptyLibrary')).not.toBeNull();
++});
++
++it('reports a failed event-triggered load when its returned promise is ignored', async () => {
++    const error = new Error('Request failed');
++    const reportError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
++    mocks.fetchUserViews.mockRejectedValueOnce(error);
++
++    tab.onResume({});
++
++    await vi.waitFor(() => expect(reportError).toHaveBeenCalledWith('Error loading home sections', error));
++    expect(tab.sectionsLoad).toBeNull();
++    expect(tab.sectionsRendered).toBe(false);
++});
++
++it('does not start a library load if the page was destroyed while the user was loading', async () => {
++    let completeUser;
++    mocks.fetchUserViews.mockResolvedValueOnce({ Items: [] });
++    mocks.getCurrentUser.mockImplementationOnce(() => new Promise(resolve => {
++        completeUser = resolve;
++    }));
++    const load = tab.onResume({});
++    tab.destroy();
++    completeUser({ Id: 'user' });
++    await load;
++
++    expect(mocks.fetchUserViews).not.toHaveBeenCalled();
++    expect(mocks.autoFocus).not.toHaveBeenCalled();
++});
+diff --git a/src/apps/legacy/controllers/session/login/index.html b/src/apps/legacy/controllers/session/login/index.html
+index 63096a3d74..4e7af936a1 100644
+--- a/src/apps/legacy/controllers/session/login/index.html
++++ b/src/apps/legacy/controllers/session/login/index.html
+@@ -1,9 +1,9 @@
+ <div id="loginPage" data-role="page" class="page standalonePage backdropPage" data-backbutton="false" data-backdroptype="splashscreen">
+-    <div class="padded-left padded-right padded-bottom-page margin-auto-y">
++    <div class="padded-left padded-right padded-bottom-page margin-auto-y loginContent">
++        <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
+         <form class="manualLoginForm margin-auto-x hide">
+-            <div class="padded-left padded-right flex align-items-center justify-content-center">
+-                <h1 class="sectionTitle">${HeaderPleaseSignIn}</h1>
+-            </div>
++            <h1 class="sectionTitle authTitle">${HeaderPleaseSignIn}</h1>
++            <p class="authDescription">${AniJellyLoginDescription}</p>
+             <div class="inputContainer">
+                 <input is="emby-input" type="text" id="txtManualName" required="required" label="${LabelUser}" autocomplete="username" autocapitalize="off" />
+             </div>
+@@ -28,12 +28,13 @@ <h1 class="sectionTitle">${HeaderPleaseSignIn}</h1>
+             </div>
+         </form>
+ 
+-        <div class="visualLoginForm" style="text-align: center;">
+-            <h1 style="margin-top:1em;">${HeaderPleaseSignIn}</h1>
++        <div class="visualLoginForm">
++            <h1 class="authTitle">${HeaderPleaseSignIn}</h1>
++            <p class="authDescription">${AniJellyLoginChooseProfile}</p>
+             <div id="divUsers" class="itemsContainer vertical-wrap centered"></div>
+         </div>
+ 
+-        <div class="readOnlyContent" style="margin: .5em auto 1em;">
++        <div class="readOnlyContent loginOptions">
+             <button is="emby-button" type="button" class="raised cancel block btnManual">
+                 <span>${ButtonManualLogin}</span>
+             </button>
+diff --git a/src/apps/legacy/controllers/session/login/login.scss b/src/apps/legacy/controllers/session/login/login.scss
+index 70bb7754ef..df13d27a2d 100644
+--- a/src/apps/legacy/controllers/session/login/login.scss
++++ b/src/apps/legacy/controllers/session/login/login.scss
+@@ -1,3 +1,5 @@
++@use '../../../../wizard/cinemaForm';
++
+ .loginDisclaimerContainer {
+     display: flex;
+     margin-top: 2em;
+@@ -24,3 +26,71 @@
+         width: fit-content;
+     }
+ }
++
++#loginPage .authBrand {
++    display: none;
++}
++
++html[data-theme="cinema"] #loginPage {
++    --standalone-page-top: 3rem;
++
++    @include cinemaForm.form;
++
++    background: var(--cinema-backdrop);
++
++    .loginContent {
++        @include cinemaForm.glass-surface;
++
++        box-sizing: border-box;
++        width: 100%;
++        max-width: 33rem;
++        margin: 2rem auto 0;
++        padding-inline: 1.5rem;
++    }
++
++    .manualLoginForm,
++    .loginOptions {
++        width: 100%;
++        max-width: 30rem;
++        margin-inline: auto;
++    }
++
++    .loginOptions {
++        margin-top: 0.75rem;
++    }
++
++    .loginOptions .raised {
++        margin-block: 0.5rem;
++    }
++
++    .visualLoginForm {
++        text-align: center;
++    }
++
++    .visualLoginForm .card {
++        width: 33.333%;
++    }
++
++    .loginDisclaimer {
++        max-width: 100%;
++        color: var(--jf-palette-text-secondary, #bcc4d3);
++        font-size: 0.8125rem;
++        overflow-wrap: anywhere;
++    }
++
++    @media (max-width: 40em) {
++        --standalone-page-top: 2rem;
++
++        .loginContent {
++            margin-top: 1rem;
++        }
++
++        .loginContent::before {
++            inset-inline: 0.5rem;
++        }
++
++        .visualLoginForm .card {
++            width: 50%;
++        }
++    }
++}
+diff --git a/src/apps/modern/AppLayout.tsx b/src/apps/modern/AppLayout.tsx
+index 9683138a90..bd173a0a58 100644
+--- a/src/apps/modern/AppLayout.tsx
++++ b/src/apps/modern/AppLayout.tsx
+@@ -9,6 +9,9 @@ import CustomCss from 'components/CustomCss';
+ import OffsetAppBar from 'components/OffsetAppBar';
+ import ThemeCss from 'components/ThemeCss';
+ import { useApi } from 'hooks/useApi';
++import { useUserTheme } from 'hooks/useUserTheme';
++import globalize from 'lib/globalize';
++import { DRAWER_WIDTH } from 'components/ResponsiveDrawer';
+ 
+ import AppToolbar from './components/AppToolbar';
+ import AppDrawer, { isDrawerPath } from './components/drawers/AppDrawer';
+@@ -17,15 +20,18 @@ import { LibraryProvider } from './features/libraries/hooks/useLibrary';
+ import { isLibraryPath } from './features/libraries/utils/path';
+ 
+ import './AppOverrides.scss';
++import '../../styles/cinema-library.scss';
+ 
+ export const Component = () => {
+     const [ isDrawerActive, setIsDrawerActive ] = useState(false);
+     const { user } = useApi();
+     const location = useLocation();
++    const { theme } = useUserTheme();
+ 
+     const isMediumScreen = useMediaQuery((t: Theme) => t.breakpoints.up('md'));
+-    const isDrawerAvailable = isDrawerPath(location.pathname) && Boolean(user) && !isMediumScreen;
+-    const isDrawerOpen = isDrawerActive && isDrawerAvailable;
++    const isDrawerAvailable = isDrawerPath(location.pathname) && Boolean(user) && (!isMediumScreen || theme === 'cinema');
++    const isDrawerDocked = isDrawerAvailable && isMediumScreen;
++    const isDrawerOpen = isDrawerActive && isDrawerAvailable && !isDrawerDocked;
+ 
+     const onToggleDrawer = useCallback(() => {
+         setIsDrawerActive(!isDrawerActive);
+@@ -42,9 +48,16 @@ export const Component = () => {
+                 }}
+             >
+                 <StrictMode>
+-                    <OffsetAppBar dense>
++                    <OffsetAppBar
++                        dense
++                        sx={isDrawerDocked ? {
++                            width: `calc(100% - ${DRAWER_WIDTH}px)`,
++                            ml: `${DRAWER_WIDTH}px`
++                        } : undefined}
++                    >
+                         <AppToolbar
+                             isDrawerAvailable={!isMediumScreen && isDrawerAvailable}
++                            isDrawerDocked={isDrawerDocked}
+                             isDrawerOpen={isDrawerOpen}
+                             onDrawerButtonClick={onToggleDrawer}
+                         />
+@@ -53,11 +66,13 @@ export const Component = () => {
+ 
+                     {
+                         isDrawerAvailable && (
+-                            <AppDrawer
+-                                open={isDrawerOpen}
+-                                onClose={onToggleDrawer}
+-                                onOpen={onToggleDrawer}
+-                            />
++                            <nav className={theme === 'cinema' ? 'cinemaSidebar' : undefined} aria-label={globalize.translate('Menu')}>
++                                <AppDrawer
++                                    open={isDrawerOpen}
++                                    onClose={onToggleDrawer}
++                                    onOpen={onToggleDrawer}
++                                />
++                            </nav>
+                         )
+                     }
+                 </StrictMode>
+@@ -66,7 +81,8 @@ export const Component = () => {
+                     component='main'
+                     sx={{
+                         position: 'relative',
+-                        width: '100%',
++                        width: isDrawerDocked ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
++                        ml: isDrawerDocked ? `${DRAWER_WIDTH}px` : 0,
+                         flexGrow: 1
+                     }}
+                 >
+diff --git a/src/apps/modern/components/AppToolbar/index.tsx b/src/apps/modern/components/AppToolbar/index.tsx
+index 57b3d211ab..4501ef579c 100644
+--- a/src/apps/modern/components/AppToolbar/index.tsx
++++ b/src/apps/modern/components/AppToolbar/index.tsx
+@@ -14,12 +14,14 @@ import UserViewNav from './userViews/UserViewNav';
+ interface AppToolbarProps {
+     isDrawerAvailable: boolean
+     isDrawerOpen: boolean
++    isDrawerDocked?: boolean
+     onDrawerButtonClick: (event: React.MouseEvent<HTMLElement>) => void
+ }
+ 
+ const AppToolbar: FC<AppToolbarProps> = ({
+     isDrawerAvailable,
+     isDrawerOpen,
++    isDrawerDocked = false,
+     onDrawerButtonClick
+ }) => {
+     const location = useLocation();
+@@ -49,7 +51,7 @@ const AppToolbar: FC<AppToolbarProps> = ({
+             isUserMenuAvailable={!isPublicPath}
+             className='padded-left padded-right'
+         >
+-            {!isDrawerAvailable && (
++            {!isDrawerAvailable && !isDrawerDocked && (
+                 <Stack
+                     direction='row'
+                     spacing={0.5}
+diff --git a/src/apps/modern/components/drawers/DrawerHeaderLink.tsx b/src/apps/modern/components/drawers/DrawerHeaderLink.tsx
+index 155f7e2e4b..931cab4137 100644
+--- a/src/apps/modern/components/drawers/DrawerHeaderLink.tsx
++++ b/src/apps/modern/components/drawers/DrawerHeaderLink.tsx
+@@ -9,9 +9,26 @@ import ListItemLink from 'components/ListItemLink';
+ 
+ import appIcon from '@jellyfin/ux-web/icon-transparent.png';
+ 
+-const DrawerHeaderLink = () => {
++interface DrawerHeaderLinkProps {
++    isCinema: boolean
++}
++
++const DrawerHeaderLink = ({ isCinema }: DrawerHeaderLinkProps) => {
+     const { data: systemInfo } = useSystemInfo();
+ 
++    if (isCinema) {
++        return (
++            <ListItemLink to='/home' classes={{ root: 'cinemaBrand' }} selected={false}>
++                <ListItemIcon>
++                    <svg width='28' height='28' viewBox='0 0 28 28' fill='none' aria-hidden='true'>
++                        <path d='M7 5.5C7 4 8.7 3.1 10 3.9L23 12.4C24.2 13.2 24.2 14.8 23 15.6L10 24.1C8.7 24.9 7 24 7 22.5Z' stroke='currentColor' strokeWidth='2.3' strokeLinejoin='round' />
++                    </svg>
++                </ListItemIcon>
++                <ListItemText primary='AniJelly' secondary={systemInfo?.ServerName} />
++            </ListItemLink>
++        );
++    }
++
+     return (
+         <ListItemLink to='/'>
+             <ListItemIcon sx={{ minWidth: 56 }}>
+diff --git a/src/apps/modern/components/drawers/MainDrawerContent.tsx b/src/apps/modern/components/drawers/MainDrawerContent.tsx
+index 3c4f1a043c..811536a63f 100644
+--- a/src/apps/modern/components/drawers/MainDrawerContent.tsx
++++ b/src/apps/modern/components/drawers/MainDrawerContent.tsx
+@@ -1,5 +1,9 @@
+ import Favorite from '@mui/icons-material/Favorite';
+ import Home from '@mui/icons-material/Home';
++import Add from '@mui/icons-material/Add';
++import Search from '@mui/icons-material/Search';
++import Settings from '@mui/icons-material/Settings';
++import Dashboard from '@mui/icons-material/Dashboard';
+ import Divider from '@mui/material/Divider';
+ import Icon from '@mui/material/Icon';
+ import List from '@mui/material/List';
+@@ -12,10 +16,12 @@ import React from 'react';
+ import { useLocation } from 'react-router-dom';
+ 
+ import ListItemLink from 'components/ListItemLink';
++import UserAvatar from 'components/UserAvatar';
+ import { appRouter } from 'components/router/appRouter';
+ import { useUserViews } from 'hooks/api/useUserViews';
+ import { useApi } from 'hooks/useApi';
+ import { useWebConfig } from 'hooks/useWebConfig';
++import { useUserTheme } from 'hooks/useUserTheme';
+ import globalize from 'lib/globalize';
+ 
+ import LibraryIcon from '../LibraryIcon';
+@@ -24,9 +30,11 @@ import DrawerHeaderLink from './DrawerHeaderLink';
+ const MainDrawerContent = () => {
+     const { user } = useApi();
+     const location = useLocation();
+-    const { data: userViewsData } = useUserViews({ userId: user?.Id });
++    const { data: userViewsData, isSuccess } = useUserViews({ userId: user?.Id });
+     const userViews = userViewsData?.Items || [];
+     const webConfig = useWebConfig();
++    const { theme } = useUserTheme();
++    const isCinema = theme === 'cinema';
+ 
+     const isHomeSelected = location.pathname === '/home' && (!location.search || location.search === '?tab=0');
+ 
+@@ -35,8 +43,24 @@ const MainDrawerContent = () => {
+             {/* MAIN LINKS */}
+             <List sx={{ paddingTop: 0 }}>
+                 <ListItem disablePadding>
+-                    <DrawerHeaderLink />
++                    <DrawerHeaderLink isCinema={isCinema} />
+                 </ListItem>
++                {isCinema && user && (
++                    <>
++                        <ListItem disablePadding>
++                            <ListItemLink to='/mypreferencesmenu' classes={{ root: 'cinemaUserLink' }}>
++                                <ListItemIcon><UserAvatar user={user} size={30} /></ListItemIcon>
++                                <ListItemText primary={user.Name} />
++                            </ListItemLink>
++                        </ListItem>
++                        <ListItem disablePadding>
++                            <ListItemLink to='/search'>
++                                <ListItemIcon><Search /></ListItemIcon>
++                                <ListItemText primary={globalize.translate('Search')} />
++                            </ListItemLink>
++                        </ListItem>
++                    </>
++                )}
+                 <ListItem disablePadding>
+                     <ListItemLink to='/home' selected={isHomeSelected}>
+                         <ListItemIcon>
+@@ -83,7 +107,7 @@ const MainDrawerContent = () => {
+             )}
+ 
+             {/* LIBRARY LINKS */}
+-            {userViews.length > 0 && (
++            {(userViews.length > 0 || isCinema) && (
+                 <>
+                     <Divider />
+                     <List
+@@ -106,9 +130,35 @@ const MainDrawerContent = () => {
+                                 </ListItemLink>
+                             </ListItem>
+                         ))}
++                        {isCinema && isSuccess && !userViews.length && user?.Policy?.IsAdministrator && (
++                            <ListItem disablePadding>
++                                <ListItemLink to='/dashboard/libraries'>
++                                    <ListItemIcon><Add /></ListItemIcon>
++                                    <ListItemText primary={globalize.translate('ButtonAddMediaLibrary')} />
++                                </ListItemLink>
++                            </ListItem>
++                        )}
+                     </List>
+                 </>
+             )}
++            {isCinema && (
++                <List className='cinemaSidebarSettings'>
++                    {user?.Policy?.IsAdministrator && (
++                        <ListItem disablePadding>
++                            <ListItemLink to='/dashboard'>
++                                <ListItemIcon><Dashboard /></ListItemIcon>
++                                <ListItemText primary={globalize.translate('TabDashboard')} />
++                            </ListItemLink>
++                        </ListItem>
++                    )}
++                    <ListItem disablePadding>
++                        <ListItemLink to='/mypreferencesmenu'>
++                            <ListItemIcon><Settings /></ListItemIcon>
++                            <ListItemText primary={globalize.translate('Settings')} />
++                        </ListItemLink>
++                    </ListItem>
++                </List>
++            )}
+         </>
+     );
+ };
+diff --git a/src/apps/modern/routes/home.tsx b/src/apps/modern/routes/home.tsx
+index 1fb59f85b9..d083fdd1ed 100644
+--- a/src/apps/modern/routes/home.tsx
++++ b/src/apps/modern/routes/home.tsx
+@@ -71,7 +71,7 @@ const Home = () => {
+                 depends = 'favorites';
+         }
+ 
+-        return import(/* webpackChunkName: "[request]" */ `../../../apps/legacy/controllers/${depends}`).then(({ default: ControllerFactory }) => {
++        return import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../../apps/legacy/controllers/${depends}`).then(({ default: ControllerFactory }) => {
+             let controller = tabControllers[index];
+ 
+             if (!controller) {
+diff --git a/src/apps/wizard/_cinemaForm.scss b/src/apps/wizard/_cinemaForm.scss
+new file mode 100644
+index 0000000000..57a9a9b816
+--- /dev/null
++++ b/src/apps/wizard/_cinemaForm.scss
+@@ -0,0 +1,147 @@
++@mixin glass-surface($inline-inset: 0) {
++    position: relative;
++    isolation: isolate;
++
++    &::before {
++        position: absolute;
++        z-index: -1;
++        inset: -0.75rem $inline-inset;
++        border: 1px solid var(--cinema-glass-border);
++        border-radius: 1.25rem;
++        background: var(--cinema-glass-fallback);
++        content: "";
++        pointer-events: none;
++    }
++
++    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
++        &::before {
++            background: var(--cinema-glass-sheen), var(--cinema-auth-glass-bg);
++            box-shadow: var(--cinema-glass-shadow);
++            backdrop-filter: var(--cinema-glass-filter);
++        }
++    }
++}
++
++@mixin form {
++    color: #f5f5f7;
++    font-size: 16px;
++    line-height: 1.5;
++
++    .authBrand {
++        display: flex;
++        align-items: center;
++        justify-content: center;
++        gap: 0.4rem;
++        margin-bottom: 1.5rem;
++        font-size: 1.25rem;
++        font-weight: 650;
++        letter-spacing: -0.02em;
++    }
++
++    .authBrand .material-icons {
++        color: var(--cinema-accent-mint);
++        font-size: 2rem;
++    }
++
++    .authTitle {
++        display: block;
++        margin: 0 0 0.75rem;
++        font-size: 2.5rem;
++        font-weight: 650;
++        line-height: 1.2;
++        letter-spacing: -0.035em;
++        text-align: center;
++        text-wrap: balance;
++    }
++
++    .authDescription {
++        margin: 0 0 2rem;
++        color: var(--jf-palette-text-secondary, #bcc4d3);
++        font-size: 1rem;
++        line-height: 1.6;
++        text-align: center;
++    }
++
++    .inputContainer,
++    .selectContainer {
++        margin-bottom: 1.25rem;
++    }
++
++    .inputLabel,
++    .selectLabel {
++        margin-bottom: 0.5rem;
++        color: #f5f5f7;
++        font-size: 0.875rem;
++        font-weight: 500;
++    }
++
++    .emby-input,
++    .emby-select {
++        box-sizing: border-box;
++        min-height: 3.25rem;
++        padding: 0.8rem 1rem;
++        border: 1px solid var(--cinema-glass-border);
++        border-radius: 0.75rem;
++        background: rgba(245, 245, 247, 0.06);
++        color: #f5f5f7;
++        font-size: 16px;
++    }
++
++    .emby-select {
++        padding-inline-end: 2.75rem;
++    }
++
++    .emby-input:focus,
++    .emby-select:focus {
++        border-color: #0a84ff;
++        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.4);
++    }
++
++    .fieldDescription {
++        margin-top: 0.5rem;
++        color: var(--jf-palette-text-secondary, #bcc4d3);
++        font-size: 0.8125rem;
++        line-height: 1.5;
++    }
++
++    .checkboxContainer {
++        margin-block: 1.5rem;
++    }
++
++    .raised {
++        min-height: 3rem;
++        padding: 0.75rem 1.25rem;
++        border-radius: 1rem;
++        font-size: 1rem;
++        font-weight: 600;
++        box-shadow: none;
++    }
++
++    .button-submit {
++        background: var(--jf-palette-primary-main, #8bbcff);
++        color: var(--jf-palette-primary-contrastText, #0b0b0d);
++    }
++
++    .button-cancel,
++    .cancel,
++    .btnSelectServer {
++        border: 1px solid rgba(245, 245, 247, 0.14);
++        background: transparent;
++        color: #f5f5f7;
++        box-shadow: none;
++    }
++
++    .raised:focus-visible {
++        box-shadow: 0 0 0 3px #0a84ff;
++    }
++
++    .raised:disabled {
++        opacity: 0.45;
++    }
++
++    @media (max-width: 40em) {
++        .authTitle {
++            font-size: 2rem;
++        }
++    }
++}
+diff --git a/src/apps/wizard/controllers/finish/index.html b/src/apps/wizard/controllers/finish/index.html
+index 66ee9a109c..092ed8cafd 100644
+--- a/src/apps/wizard/controllers/finish/index.html
++++ b/src/apps/wizard/controllers/finish/index.html
+@@ -1,8 +1,11 @@
+-<div id="wizardFinishPage" data-role="page" class="page standalonePage wizardPage">
++<div id="wizardFinishPage" data-role="page" class="page standalonePage wizardPage" data-wizard-step="6">
+     <div class="padded-left padded-right padded-top">
+         <div class="ui-corner-all ui-shadow wizardContent">
+-            <h1>${LabelYoureDone}</h1>
+-            <p style="margin:2em 0;">${WizardCompleted}</p>
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepFinish}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
++            <h1 class="authTitle">${LabelYoureDone}</h1>
++            <p class="authDescription">${AniJellySetupFinishDescription}</p>
+             <div class="wizardNavigation">
+                 <button is="emby-button" type="button" class="raised button-cancel" onclick="history.back();">
+                     <span class="material-icons arrow_back" aria-hidden="true"></span>
+diff --git a/src/apps/wizard/controllers/library.html b/src/apps/wizard/controllers/library.html
+index e78b5e3462..7a1211a741 100644
+--- a/src/apps/wizard/controllers/library.html
++++ b/src/apps/wizard/controllers/library.html
+@@ -1,14 +1,12 @@
+-<div id="wizardLibraryPage" data-role="page" class="page standalonePage wizardPage mediaLibraryPage">
++<div id="wizardLibraryPage" data-role="page" class="page standalonePage wizardPage mediaLibraryPage" data-wizard-step="3">
+     <div class="padded-left padded-right padded-top">
+         <div class="ui-corner-all ui-shadow wizardContent">
+-            <div>
+-                <h1 style="display:inline-block;">${HeaderSetupLibrary}</h1>
+-                <a href="https://jellyfin.org/docs/general/server/libraries" rel="noopener noreferrer" target="_blank" class="clearLink" style="margin-top:-10px;display:inline-block;vertical-align:middle;margin-left:2em;"><button is="emby-button" type="button" class="raised"><span class="material-icons info" aria-hidden="true"></span><span>${Help}</span></button></a>
+-            </div>
+-            <br />
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepLibrary}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
++            <h1 class="authTitle">${HeaderSetupLibrary}</h1>
++            <p class="authDescription">${AniJellySetupLibraryDescription}</p>
+             <div id="divVirtualFolders"></div>
+-            <br />
+-            <br />
+             <div class="wizardNavigation">
+                 <button is="emby-button" type="button" class="raised button-cancel" onclick="history.back();">
+                     <span class="material-icons arrow_back" aria-hidden="true"></span>
+@@ -19,6 +17,9 @@ <h1 style="display:inline-block;">${HeaderSetupLibrary}</h1>
+                     <span class="material-icons arrow_forward" aria-hidden="true"></span>
+                 </button>
+             </div>
++            <div class="wizardHelp">
++                <a is="emby-linkbutton" href="https://jellyfin.org/docs/general/server/libraries" rel="noopener noreferrer" target="_blank" class="button-link"><span>${Help}</span></a>
++            </div>
+         </div>
+     </div>
+ </div>
+diff --git a/src/apps/wizard/controllers/navigation.test.js b/src/apps/wizard/controllers/navigation.test.js
+new file mode 100644
+index 0000000000..fd0eb1060f
+--- /dev/null
++++ b/src/apps/wizard/controllers/navigation.test.js
+@@ -0,0 +1,16 @@
++import { readFileSync } from 'node:fs';
++import { join } from 'node:path';
++import { expect, it } from 'vitest';
++
++it('starts administrator setup without a back action and preserves later back navigation', () => {
++    const template = document.createElement('template');
++    template.innerHTML = readFileSync(join(import.meta.dirname, 'user/index.html'), 'utf8');
++    expect(template.content.querySelector('.button-cancel')).toBeNull();
++    expect(template.content.querySelector('.wizardPage').dataset.backbutton).toBe('false');
++    expect(template.content.querySelector('button[type="submit"]')).not.toBeNull();
++
++    for (const path of ['./library.html', './settings/index.html', './remote/index.html', './finish/index.html']) {
++        template.innerHTML = readFileSync(join(import.meta.dirname, path), 'utf8');
++        expect(template.content.querySelector('.button-cancel').getAttribute('onclick')).toBe('history.back();');
++    }
++});
+diff --git a/src/apps/wizard/controllers/remote/index.html b/src/apps/wizard/controllers/remote/index.html
+index 542cc07686..2726194f8b 100644
+--- a/src/apps/wizard/controllers/remote/index.html
++++ b/src/apps/wizard/controllers/remote/index.html
+@@ -1,8 +1,12 @@
+-<div id="wizardSettingsPage" data-role="page" class="page standalonePage wizardPage">
++<div id="wizardSettingsPage" data-role="page" class="page standalonePage wizardPage" data-wizard-step="5">
+     <div class="padded-left padded-right padded-top">
+         <div class="ui-corner-all ui-shadow wizardContent">
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepRemote}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
+             <form class="wizardSettingsForm">
+-                <h1>${HeaderConfigureRemoteAccess}</h1>
++                <h1 class="authTitle">${HeaderConfigureRemoteAccess}</h1>
++                <p class="authDescription">${AniJellySetupRemoteDescription}</p>
+ 
+                 <div class="checkboxContainer checkboxContainer-withDescription">
+                     <label>
+@@ -11,7 +15,6 @@ <h1>${HeaderConfigureRemoteAccess}</h1>
+                     </label>
+                     <div class="fieldDescription checkboxFieldDescription">${AllowRemoteAccessHelp}</div>
+                 </div>
+-                <br />
+                 <div class="wizardNavigation">
+                     <button is="emby-button" type="button" class="raised button-cancel" onclick="history.back();">
+                         <span class="material-icons arrow_back" aria-hidden="true"></span>
+diff --git a/src/apps/wizard/controllers/settings/index.html b/src/apps/wizard/controllers/settings/index.html
+index 52b44376eb..cfffe200d5 100644
+--- a/src/apps/wizard/controllers/settings/index.html
++++ b/src/apps/wizard/controllers/settings/index.html
+@@ -1,9 +1,12 @@
+-<div id="wizardSettingsPage" data-role="page" class="page standalonePage wizardPage">
++<div id="wizardSettingsPage" data-role="page" class="page standalonePage wizardPage" data-wizard-step="4">
+     <div class="padded-left padded-right padded-top">
+         <div class="ui-corner-all ui-shadow wizardContent">
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepMetadata}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
+             <form class="wizardSettingsForm">
+-                <h1>${HeaderPreferredMetadataLanguage}</h1>
+-                <p style="margin:1.5em 0;">${DefaultMetadataLangaugeDescription}</p>
++                <h1 class="authTitle">${HeaderPreferredMetadataLanguage}</h1>
++                <p class="authDescription">${DefaultMetadataLangaugeDescription}</p>
+ 
+                 <div class="selectContainer">
+                     <select is="emby-select" id="selectLanguage" required="required" label="${LabelLanguage}"></select>
+@@ -12,8 +15,6 @@ <h1>${HeaderPreferredMetadataLanguage}</h1>
+                 <div class="selectContainer">
+                     <select is="emby-select" id="selectCountry" required="required" label="${LabelCountry}"></select>
+                 </div>
+-                <br />
+-
+                 <div class="wizardNavigation">
+                     <button is="emby-button" type="button" class="raised button-cancel" onclick="history.back();">
+                         <span class="material-icons arrow_back" aria-hidden="true"></span>
+diff --git a/src/apps/wizard/controllers/start/index.html b/src/apps/wizard/controllers/start/index.html
+index 9ec77613bc..70bea3d048 100644
+--- a/src/apps/wizard/controllers/start/index.html
++++ b/src/apps/wizard/controllers/start/index.html
+@@ -1,17 +1,12 @@
+-<div id="wizardStartPage" data-role="page" class="page standalonePage wizardPage" data-backbutton="false">
++<div id="wizardStartPage" data-role="page" class="page standalonePage wizardPage" data-backbutton="false" data-wizard-step="2">
+     <div class="padded-left padded-right padded-top">
+-        <div class="ui-corner-all ui-shadow wizardContent" style="position:relative;">
++        <div class="ui-corner-all ui-shadow wizardContent">
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepServer}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
+             <form class="wizardStartForm">
+-                <div>
+-                    <h1 style="float:left;">${WelcomeToProject}</h1>
+-                    <a is="emby-linkbutton" rel="noopener noreferrer" href="https://jellyfin.org/docs/general/post-install/setup-wizard/" target="_blank" class="raised raised-alt" style="float:right;margin-top:20px;">
+-                        <span>${ButtonQuickStartGuide}</span>
+-                    </a>
+-                </div>
+-
+-                <br style="clear:both;" />
+-                <p>${ThisWizardWillGuideYou}</p>
+-                <br />
++                <h1 class="authTitle">${AniJellySetupServerTitle}</h1>
++                <p class="authDescription">${AniJellySetupServerDescription}</p>
+                 <div class="inputContainer">
+                     <input is="emby-input" type="text" id="txtServerName" label="${LabelServerName}" required="required" />
+                     <div class="fieldDescription">${LabelServerNameHelp}</div>
+@@ -19,14 +14,17 @@ <h1 style="float:left;">${WelcomeToProject}</h1>
+                 <div class="selectContainer">
+                     <select is="emby-select" id="selectLocalizationLanguage" label="${LabelPreferredDisplayLanguage}"></select>
+                 </div>
+-                <br />
+-
+-                <div class="wizardNavigation" style="text-align:right;">
++                <div class="wizardNavigation">
+                     <button is="emby-button" type="submit" class="raised button-submit">
+                         <span>${Next}</span>
+                         <span class="material-icons arrow_forward" aria-hidden="true"></span>
+                     </button>
+                 </div>
++                <div class="wizardHelp">
++                    <a is="emby-linkbutton" rel="noopener noreferrer" href="https://jellyfin.org/docs/general/post-install/setup-wizard/" target="_blank" class="button-link">
++                        <span>${ButtonQuickStartGuide}</span>
++                    </a>
++                </div>
+             </form>
+         </div>
+     </div>
+diff --git a/src/apps/wizard/controllers/user/index.html b/src/apps/wizard/controllers/user/index.html
+index 62c2eb9c56..32816f52a8 100644
+--- a/src/apps/wizard/controllers/user/index.html
++++ b/src/apps/wizard/controllers/user/index.html
+@@ -1,30 +1,28 @@
+-<div id="wizardUserPage" data-role="page" class="page standalonePage wizardPage">
++<div id="wizardUserPage" data-role="page" class="page standalonePage wizardPage" data-backbutton="false" data-wizard-step="1">
+     <div class="padded-left padded-right padded-top">
+         <div class="ui-corner-all ui-shadow wizardContent">
++            <div class="authBrand"><span class="material-icons play_arrow" aria-hidden="true"></span><span>AniJelly</span></div>
++            <p class="wizardStep">${AniJellySetupStepAccount}</p>
++            <div class="wizardProgress" aria-hidden="true"></div>
+             <form class="wizardUserForm">
+                 <div class="verticalSection">
+-                    <h1 class="sectionTitle">${TellUsAboutYourself}</h1>
+-                    <p style="margin-top:2em;">${UserProfilesIntro}</p>
+-                    <br />
++                    <h1 class="sectionTitle authTitle">${AniJellyWelcome}</h1>
++                    <p class="authDescription">${AniJellySetupAccountDescription}</p>
+                     <div class="inputContainer">
+-                        <input is="emby-input" type="text" id="txtUsername" label="${LabelUsername}" required="required" />
++                        <input is="emby-input" type="text" id="txtUsername" label="${LabelUsername}" autocomplete="username" autocapitalize="off" required="required" />
+                         <div class="fieldDescription">${SelectAdminUsername}</div>
+                     </div>
+                     <div class="inputContainer">
+-                        <input is="emby-input" id="txtManualPassword" type="password" label="${LabelPassword}" required="required" />
++                        <input is="emby-input" id="txtManualPassword" type="password" label="${LabelPassword}" autocomplete="new-password" required="required" />
+                         <div class="fieldDescription">${PasswordRequiredForAdmin}</div>
+                     </div>
+                     <div class="inputContainer">
+-                        <input is="emby-input" id="txtPasswordConfirm" type="password" label="${LabelPasswordConfirm}" required="required" />
++                        <input is="emby-input" id="txtPasswordConfirm" type="password" label="${LabelPasswordConfirm}" autocomplete="new-password" required="required" />
+                     </div>
+-                    <p>${MoreUsersCanBeAddedLater}</p>
++                    <p class="wizardNote">${MoreUsersCanBeAddedLater}</p>
+                 </div>
+ 
+                 <div class="wizardNavigation">
+-                    <button is="emby-button" type="button" class="raised button-cancel" onclick="history.back();">
+-                        <span class="material-icons arrow_back" aria-hidden="true"></span>
+-                        <span>${Previous}</span>
+-                    </button>
+                     <button is="emby-button" type="submit" class="raised button-submit">
+                         <span>${Next}</span>
+                         <span class="material-icons arrow_forward" aria-hidden="true"></span>
+diff --git a/src/apps/wizard/routes/routes.tsx b/src/apps/wizard/routes/routes.tsx
+index fbbc61a033..dde338a2b9 100644
+--- a/src/apps/wizard/routes/routes.tsx
++++ b/src/apps/wizard/routes/routes.tsx
+@@ -7,6 +7,8 @@ import ConnectionRequired from 'components/ConnectionRequired';
+ import ErrorBoundary from 'components/router/ErrorBoundary';
+ import { type LegacyRoute, toViewManagerPageRoute } from 'components/router/LegacyRoute';
+ 
++import '../wizard.scss';
++
+ const ROUTES: LegacyRoute[] = [
+     {
+         path: 'remoteaccess',
+diff --git a/src/apps/wizard/wizard.scss b/src/apps/wizard/wizard.scss
+new file mode 100644
+index 0000000000..b8f045bf30
+--- /dev/null
++++ b/src/apps/wizard/wizard.scss
+@@ -0,0 +1,106 @@
++@use './cinemaForm';
++
++.wizardPage .authBrand,
++.wizardStep,
++.wizardProgress {
++    display: none;
++}
++
++html[data-theme="cinema"] .wizardPage {
++    --wizard-page-top: 1.5rem;
++
++    @include cinemaForm.form;
++
++    background: var(--cinema-backdrop);
++
++    > .padded-left {
++        padding: 1rem 1.5rem;
++    }
++
++    .wizardContent {
++        @include cinemaForm.glass-surface(-1rem);
++
++        box-sizing: border-box;
++        width: 100%;
++        max-width: 30rem;
++        margin-inline: auto;
++        padding: 0;
++        background: transparent;
++        box-shadow: none;
++    }
++
++    .wizardStep {
++        display: block;
++        margin: 0 0 0.75rem;
++        color: var(--cinema-accent-violet);
++        font-size: 0.8125rem;
++        text-align: center;
++    }
++
++    .authDescription {
++        margin-bottom: 1.5rem;
++    }
++
++    .wizardProgress {
++        display: block;
++        width: 9rem;
++        height: 3px;
++        margin: 0 auto 1rem;
++        overflow: hidden;
++        border-radius: 3px;
++        background: rgba(197, 182, 255, 0.16);
++    }
++
++    .wizardProgress::after {
++        display: block;
++        width: var(--wizard-progress);
++        height: 100%;
++        border-radius: inherit;
++        background: linear-gradient(90deg, var(--cinema-accent-violet), var(--cinema-accent-mint));
++        content: "";
++    }
++
++    @for $step from 1 through 6 {
++        &[data-wizard-step="#{$step}"] {
++            --wizard-progress: calc(100% / 6 * #{$step});
++        }
++    }
++
++    .wizardNote {
++        margin-block: 1rem;
++        color: var(--jf-palette-text-secondary, #bcc4d3);
++        font-size: 0.8125rem;
++        text-align: center;
++    }
++
++    .wizardNavigation {
++        display: flex;
++        gap: 0.75rem;
++        margin-top: 1.5rem;
++    }
++
++    .wizardNavigation .raised {
++        margin: 0;
++    }
++
++    .wizardNavigation .button-submit {
++        flex: 1;
++    }
++
++    .wizardHelp {
++        margin-top: 1.5rem;
++        color: var(--jf-palette-text-secondary, #bcc4d3);
++        font-size: 0.875rem;
++        text-align: center;
++    }
++
++    #divVirtualFolders .card {
++        width: 50%;
++    }
++
++    @media (max-width: 40em) {
++        .wizardContent::before {
++            inset-inline: -0.5rem;
++        }
++    }
++}
+diff --git a/src/components/homesections/homesections.js b/src/components/homesections/homesections.js
+index 1a0363757a..87bac9d30a 100644
+--- a/src/components/homesections/homesections.js
++++ b/src/components/homesections/homesections.js
+@@ -1,10 +1,9 @@
+ import layoutManager from 'components/layoutManager';
+ import { DEFAULT_SECTIONS, HomeSectionType } from 'constants/homeSectionType';
+-import { getUserViewsQuery } from 'hooks/api/useUserViews';
++import { fetchUserViews } from 'hooks/api/useUserViews';
+ import globalize from 'lib/globalize';
+ import ServerConnections from 'lib/jellyfin-apiclient/ServerConnections';
+ import Dashboard from 'utils/dashboard';
+-import { queryClient } from 'utils/query/queryClient';
+ 
+ import { loadRecordings } from './sections/activeRecordings';
+ import { loadLibraryButtons } from './sections/libraryButtons';
+@@ -20,6 +19,7 @@ import 'elements/emby-scroller/emby-scroller';
+ import 'elements/emby-button/emby-button';
+ 
+ import './homesections.scss';
++import '../../styles/cinema-library.scss';
+ 
+ const MAX_SECTIONS = 10;
+ const MAX_SECTIONS_TV = MAX_SECTIONS + 1; // TV layout can have an extra section to ensure a library section is always visible
+@@ -55,13 +55,13 @@ function getAllSectionsToShow(userSettings) {
+     return sections;
+ }
+ 
+-export function loadSections(elem, apiClient, user, userSettings) {
++export function loadSections(elem, apiClient, user, userSettings, isCurrent = () => true) {
+     const api = ServerConnections.getApi(apiClient.serverId());
+     const userId = user.Id || apiClient.getCurrentUserId();
+-    return queryClient
+-        .fetchQuery(getUserViewsQuery(api, { userId }))
++    return fetchUserViews(api, { userId })
+         .then(result => result.Items || [])
+         .then(function (userViews) {
++            if (!isCurrent()) return;
+             let html = '';
+ 
+             if (userViews.length) {
+@@ -82,19 +82,30 @@ export function loadSections(elem, apiClient, user, userSettings) {
+                 return Promise.all(promises)
+                     // Timeout for polyfilled CustomElements (webOS 1.2)
+                     .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
+-                    .then(() => resume(elem, { refresh: true }));
++                    .then(() => isCurrent() ? resume(elem, { refresh: true }) : undefined);
+             } else {
+-                let noLibDescription;
+-                if (user.Policy?.IsAdministrator) {
+-                    noLibDescription = globalize.translate('NoCreatedLibraries', '<br><a id="button-createLibrary" class="button-link">', '</a>');
++                if (document.documentElement.dataset.theme === 'cinema') {
++                    html = '<section class="cinemaEmptyLibrary" aria-labelledby="cinemaEmptyLibraryTitle"><div class="cinemaEmptyLibraryContent">';
++                    html += '<span class="material-icons cinemaEmptyLibraryIcon" aria-hidden="true">theaters</span>';
++                    html += '<h2 id="cinemaEmptyLibraryTitle">' + globalize.translate('AniJellyHomeEmptyTitle') + '</h2>';
++                    html += '<p>' + globalize.translate(user.Policy?.IsAdministrator ? 'AniJellyHomeEmptyDescription' : 'AskAdminToCreateLibrary') + '</p>';
++                    if (user.Policy?.IsAdministrator) {
++                        html += '<button type="button" is="emby-button" id="button-createLibrary" class="raised emby-button">' + globalize.translate('ButtonAddMediaLibrary') + '</button>';
++                    }
++                    html += '</div></section>';
+                 } else {
+-                    noLibDescription = globalize.translate('AskAdminToCreateLibrary');
++                    let noLibDescription;
++                    if (user.Policy?.IsAdministrator) {
++                        noLibDescription = globalize.translate('NoCreatedLibraries', '<br><a id="button-createLibrary" class="button-link">', '</a>');
++                    } else {
++                        noLibDescription = globalize.translate('AskAdminToCreateLibrary');
++                    }
++
++                    html += '<div class="centerMessage padded-left padded-right">';
++                    html += '<h2>' + globalize.translate('MessageNothingHere') + '</h2>';
++                    html += '<p>' + noLibDescription + '</p>';
++                    html += '</div>';
+                 }
+-
+-                html += '<div class="centerMessage padded-left padded-right">';
+-                html += '<h2>' + globalize.translate('MessageNothingHere') + '</h2>';
+-                html += '<p>' + noLibDescription + '</p>';
+-                html += '</div>';
+                 elem.innerHTML = html;
+ 
+                 const createNowLink = elem.querySelector('#button-createLibrary');
+diff --git a/src/components/viewManager/ViewManagerPage.tsx b/src/components/viewManager/ViewManagerPage.tsx
+index 6e879e34ed..35cc5ba6f8 100644
+--- a/src/components/viewManager/ViewManagerPage.tsx
++++ b/src/components/viewManager/ViewManagerPage.tsx
+@@ -41,20 +41,20 @@ const importController = (
+     switch (appType) {
+         case AppType.Dashboard:
+             return Promise.all([
+-                import(/* webpackChunkName: "[request]" */ `../../apps/dashboard/controllers/${controller}`),
+-                import(/* webpackChunkName: "[request]" */ `../../apps/dashboard/controllers/${view}`)
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/dashboard/controllers/${controller}`),
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/dashboard/controllers/${view}`)
+                     .then(html => globalize.translateHtml(html))
+             ]);
+         case AppType.Wizard:
+             return Promise.all([
+-                import(/* webpackChunkName: "[request]" */ `../../apps/wizard/controllers/${controller}`),
+-                import(/* webpackChunkName: "[request]" */ `../../apps/wizard/controllers/${view}`)
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/wizard/controllers/${controller}`),
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/wizard/controllers/${view}`)
+                     .then(html => globalize.translateHtml(html))
+             ]);
+         default:
+             return Promise.all([
+-                import(/* webpackChunkName: "[request]" */ `../../apps/legacy/controllers/${controller}`),
+-                import(/* webpackChunkName: "[request]" */ `../../apps/legacy/controllers/${view}`)
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/legacy/controllers/${controller}`),
++                import(/* webpackChunkName: "[request]", webpackExclude: /\.(test|spec)\.[jt]sx?$/ */ `../../apps/legacy/controllers/${view}`)
+                     .then(html => globalize.translateHtml(html))
+             ]);
+     }
+diff --git a/src/config.json b/src/config.json
+index f894af5e30..023b5d9dba 100644
+--- a/src/config.json
++++ b/src/config.json
+@@ -3,6 +3,11 @@
+   "multiserver": false,
+   "themes": [
+     {
++      "name": "Cinema",
++      "id": "cinema",
++      "color": "#0b0b0d",
++      "default": true
++    }, {
+       "name": "Apple TV",
+       "id": "appletv",
+       "color": "#bcbcbc"
+@@ -13,8 +18,7 @@
+     }, {
+       "name": "Dark",
+       "id": "dark",
+-      "color": "#202020",
+-      "default": true
++      "color": "#202020"
+     }, {
+       "name": "Light",
+       "id": "light",
+diff --git a/src/hooks/api/useUserViews.test.ts b/src/hooks/api/useUserViews.test.ts
+new file mode 100644
+index 0000000000..009cda0875
+--- /dev/null
++++ b/src/hooks/api/useUserViews.test.ts
+@@ -0,0 +1,72 @@
++import type { Api } from '@jellyfin/sdk/lib/api';
++import type { BaseItemDtoQueryResult } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto-query-result';
++import { CancelledError, QueryObserver } from '@tanstack/react-query';
++import { afterEach, beforeEach, expect, it, vi } from 'vitest';
++
++const mocks = vi.hoisted(() => ({ getUserViews: vi.fn() }));
++vi.mock('@jellyfin/sdk/lib/utils/api/user-view-api', () => ({ getUserViewApi: () => mocks }));
++vi.mock('../useApi', () => ({ useApi: vi.fn() }));
++
++import { queryClient } from 'utils/query/queryClient';
++import { fetchUserViews, getUserViewsQuery } from './useUserViews';
++
++const api = {} as Api;
++const params = { userId: 'user' };
++const data = { Items: [], TotalRecordCount: 0 };
++let finishRequest: (response: { data: BaseItemDtoQueryResult }) => void;
++let rejectRequest: (error: Error) => void;
++
++beforeEach(() => {
++    mocks.getUserViews.mockReset();
++    mocks.getUserViews.mockImplementation(() => new Promise((resolve, reject) => {
++        finishRequest = resolve;
++        rejectRequest = reject;
++    }));
++});
++
++afterEach(() => queryClient.clear());
++
++it.each([true, false])('keeps an imperative load alive when the sidebar unmounts (sidebar first: %s)', async sidebarFirst => {
++    const options = getUserViewsQuery(api, params);
++    const sidebar = new QueryObserver(queryClient, options);
++    let unsubscribe: () => void = () => undefined;
++    if (sidebarFirst) unsubscribe = sidebar.subscribe(() => undefined);
++    const load = fetchUserViews(api, params);
++    const outcome = load.then(value => ({ value }), error => ({ error }));
++    if (!sidebarFirst) unsubscribe = sidebar.subscribe(() => undefined);
++    const signal = mocks.getUserViews.mock.calls[0][1].signal as AbortSignal;
++
++    unsubscribe();
++    finishRequest({ data });
++
++    expect(await outcome).toEqual({ value: data });
++    expect(signal.aborted).toBe(false);
++    expect(mocks.getUserViews).toHaveBeenCalledTimes(1);
++    expect(queryClient.getQueryCache().find(options)?.getObserversCount()).toBe(0);
++    await expect(fetchUserViews(api, params)).resolves.toEqual(data);
++    expect(mocks.getUserViews).toHaveBeenCalledTimes(1);
++});
++
++it('still propagates explicit cancellation and releases its observer', async () => {
++    const options = getUserViewsQuery(api, params);
++    const load = fetchUserViews(api, params);
++    const outcome = load.catch(error => error);
++    const signal = mocks.getUserViews.mock.calls[0][1].signal as AbortSignal;
++    await queryClient.cancelQueries({ queryKey: options.queryKey });
++
++    expect(await outcome).toBeInstanceOf(CancelledError);
++    expect(signal.aborted).toBe(true);
++    expect(queryClient.getQueryCache().find(options)?.getObserversCount()).toBe(0);
++    finishRequest({ data });
++});
++
++it('propagates a failed request and releases its observer', async () => {
++    const options = getUserViewsQuery(api, params);
++    const error = Object.assign(new Error('Unauthorized'), { status: 401 });
++    const load = fetchUserViews(api, params);
++    const outcome = load.catch(reason => reason);
++    rejectRequest(error);
++
++    expect(await outcome).toBe(error);
++    expect(queryClient.getQueryCache().find(options)?.getObserversCount()).toBe(0);
++});
+diff --git a/src/hooks/api/useUserViews.ts b/src/hooks/api/useUserViews.ts
+index baff3dbdf4..c0c403caa2 100644
+--- a/src/hooks/api/useUserViews.ts
++++ b/src/hooks/api/useUserViews.ts
+@@ -1,12 +1,13 @@
+ import type { Api } from '@jellyfin/sdk/lib/api';
+ import type { UserViewApiGetUserViewsRequest } from '@jellyfin/sdk/lib/generated-client/api/user-view-api';
+ import { getUserViewApi } from '@jellyfin/sdk/lib/utils/api/user-view-api';
+-import { queryOptions, useQuery } from '@tanstack/react-query';
++import { QueryObserver, queryOptions, useQuery } from '@tanstack/react-query';
+ import type { AxiosRequestConfig } from 'axios';
+ 
+ import { useApi } from '../useApi';
++import { queryClient } from 'utils/query/queryClient';
+ 
+-const fetchUserViews = async (
++const requestUserViews = async (
+     api: Api,
+     params?: UserViewApiGetUserViewsRequest,
+     options?: AxiosRequestConfig
+@@ -21,10 +22,18 @@ export const getUserViewsQuery = (
+     params?: UserViewApiGetUserViewsRequest
+ ) => queryOptions({
+     queryKey: [ 'User', params?.userId, 'Views', params ],
+-    queryFn: ({ signal }) => fetchUserViews(api!, params, { signal }),
++    queryFn: ({ signal }) => requestUserViews(api!, params, { signal }),
+     enabled: !!api
+ });
+ 
++export const fetchUserViews = (api: Api, params?: UserViewApiGetUserViewsRequest) => {
++    const options = getUserViewsQuery(api, params);
++    // Imperative consumers must outlive React observers that may unmount during the shared request.
++    const observer = new QueryObserver(queryClient, { ...options, enabled: false });
++    const unsubscribe = observer.subscribe(() => undefined);
++    return queryClient.fetchQuery(options).finally(unsubscribe);
++};
++
+ export const useUserViews = (
+     params?: UserViewApiGetUserViewsRequest
+ ) => {
+diff --git a/src/hooks/useUserTheme.ts b/src/hooks/useUserTheme.ts
+index 2e24eab655..c383764d50 100644
+--- a/src/hooks/useUserTheme.ts
++++ b/src/hooks/useUserTheme.ts
+@@ -1,7 +1,9 @@
++import DefaultConfig from '../config.json';
++
+ import { useThemes } from './useThemes';
+ import { useUserSettings } from './useUserSettings';
+ 
+-export const FALLBACK_THEME_ID = 'dark';
++export const FALLBACK_THEME_ID = DefaultConfig.themes.find(theme => theme.default)?.id || 'dark';
+ 
+ export function useUserTheme() {
+     const { theme, dashboardTheme } = useUserSettings();
+diff --git a/src/scripts/libraryMenu.js b/src/scripts/libraryMenu.js
+index 7b818d4687..179881d3cc 100644
+--- a/src/scripts/libraryMenu.js
++++ b/src/scripts/libraryMenu.js
+@@ -3,11 +3,10 @@ import Headroom from 'headroom.js';
+ 
+ import { AppFeature } from 'constants/appFeature';
+ import { PluginType } from 'constants/pluginType';
+-import { getUserViewsQuery } from 'hooks/api/useUserViews';
++import { fetchUserViews } from 'hooks/api/useUserViews';
+ import globalize from 'lib/globalize';
+ import { ServerConnections } from 'lib/jellyfin-apiclient';
+ import { EventType } from 'constants/eventType';
+-import { queryClient } from 'utils/query/queryClient';
+ 
+ import dom from '../utils/dom';
+ import layoutManager from '../components/layoutManager';
+@@ -392,8 +391,7 @@ function onSidebarLinkClick() {
+ function getUserViews(apiClient, userId) {
+     const api = ServerConnections.getApi(apiClient.serverId());
+ 
+-    return queryClient
+-        .fetchQuery(getUserViewsQuery(api, { userId }))
++    return fetchUserViews(api, { userId })
+         .then(function (result) {
+             const items = result.Items;
+             const list = [];
+diff --git a/src/scripts/settings/webSettings.js b/src/scripts/settings/webSettings.js
+index 75d4abdb81..2c86854431 100644
+--- a/src/scripts/settings/webSettings.js
++++ b/src/scripts/settings/webSettings.js
+@@ -56,7 +56,7 @@ export function getServers() {
+     });
+ }
+ 
+-const baseDefaultTheme = {
++const baseDefaultTheme = DefaultConfig.themes.find(theme => theme.default) || {
+     'name': 'Dark',
+     'id': 'dark',
+     'default': true
+diff --git a/src/strings/en-us.json b/src/strings/en-us.json
+index 596b96f708..04c0821f90 100755
+--- a/src/strings/en-us.json
++++ b/src/strings/en-us.json
+@@ -1945,5 +1945,22 @@
+     "LabelPlayerSizes": "Player sizes",
+     "LabelPlaybackQuality": "Frame dropped / corrupted",
+     "AudioLanguages": "Audio languages",
+-    "SubtitleLanguages": "Subtitle languages"
++    "SubtitleLanguages": "Subtitle languages",
++    "AniJellyHomeEmptyTitle": "Your personal cinema starts here.",
++    "AniJellyHomeEmptyDescription": "Add a media library to bring your favorite films and shows together.",
++    "AniJellyWelcome": "Welcome to AniJelly",
++    "AniJellySetupStepAccount": "1 of 6 · Administrator",
++    "AniJellySetupStepServer": "2 of 6 · Server",
++    "AniJellySetupStepLibrary": "3 of 6 · Media libraries",
++    "AniJellySetupStepMetadata": "4 of 6 · Metadata",
++    "AniJellySetupStepRemote": "5 of 6 · Remote access",
++    "AniJellySetupStepFinish": "6 of 6 · Finish",
++    "AniJellySetupAccountDescription": "Set up your administrator account and make this your home cinema.",
++    "AniJellySetupServerTitle": "Make it yours",
++    "AniJellySetupServerDescription": "Give your server a name and choose your display language. You can change these later.",
++    "AniJellySetupLibraryDescription": "Add folders containing your movies, shows or music. You can also add libraries later in Settings.",
++    "AniJellySetupRemoteDescription": "Choose whether to allow remote connections to your server.",
++    "AniJellySetupFinishDescription": "Your basic settings are ready. Select Finish to start using AniJelly.",
++    "AniJellyLoginDescription": "Sign in to your server to enjoy your media.",
++    "AniJellyLoginChooseProfile": "Choose your profile to continue."
+ }
+diff --git a/src/strings/zh-cn.json b/src/strings/zh-cn.json
+index 17253aca15..edb058425a 100644
+--- a/src/strings/zh-cn.json
++++ b/src/strings/zh-cn.json
+@@ -1945,5 +1945,22 @@
+     "HlsAudioSeekStrategy": "在 HLS 流中跳转播放时所使用的策略。",
+     "LabelHlsAudioSeekStrategy": "音频跳转策略",
+     "MessageForgotPasswordRedirect": "你已被重定向到外部服务提供商进行密码重置。",
+-    "MessageItemMetadataLocked": "此项目的元数据已被锁定。请先解锁，然后再使用刮削功能。"
++    "MessageItemMetadataLocked": "此项目的元数据已被锁定。请先解锁，然后再使用刮削功能。",
++    "AniJellyHomeEmptyTitle": "你的私人影院，从这里开始。",
++    "AniJellyHomeEmptyDescription": "添加媒体库，让喜爱的电影与剧集在这里相遇。",
++    "AniJellyWelcome": "欢迎使用 AniJelly",
++    "AniJellySetupStepAccount": "第 1 步，共 6 步 · 管理员",
++    "AniJellySetupStepServer": "第 2 步，共 6 步 · 服务器",
++    "AniJellySetupStepLibrary": "第 3 步，共 6 步 · 媒体库",
++    "AniJellySetupStepMetadata": "第 4 步，共 6 步 · 元数据",
++    "AniJellySetupStepRemote": "第 5 步，共 6 步 · 远程访问",
++    "AniJellySetupStepFinish": "第 6 步，共 6 步 · 完成",
++    "AniJellySetupAccountDescription": "创建管理员账户，开始你的私人影院。",
++    "AniJellySetupServerTitle": "配置你的服务器",
++    "AniJellySetupServerDescription": "为服务器命名，并选择界面显示语言。这些设置可以稍后更改。",
++    "AniJellySetupLibraryDescription": "添加电影、剧集或音乐所在的文件夹。也可以稍后在设置中添加媒体库。",
++    "AniJellySetupRemoteDescription": "选择是否允许远程连接到你的服务器。",
++    "AniJellySetupFinishDescription": "基础设置已就绪。点击完成，开始使用 AniJelly。",
++    "AniJellyLoginDescription": "登录你的服务器，继续欣赏收藏。",
++    "AniJellyLoginChooseProfile": "选择你的用户以继续。"
+ }
+diff --git a/src/styles/cinema-library.scss b/src/styles/cinema-library.scss
+new file mode 100644
+index 0000000000..54534f131f
+--- /dev/null
++++ b/src/styles/cinema-library.scss
+@@ -0,0 +1,194 @@
++.cinemaHomeTitle {
++    display: none;
++}
++
++html[data-theme="cinema"] {
++    .cinemaSidebar .MuiDrawer-paper {
++        padding: 1.2rem 0.75rem 5rem;
++        border-right: 1px solid var(--cinema-glass-border);
++        background: var(--cinema-glass-fallback);
++        box-shadow: none;
++    }
++
++    .cinemaSidebar .MuiListItemButton-root {
++        min-height: 44px;
++        margin-bottom: 4px;
++        padding: 0.55rem 0.85rem;
++        border-radius: 14px;
++    }
++
++    .cinemaSidebar .MuiListItemButton-root.Mui-selected {
++        color: var(--jf-palette-primary-contrastText);
++        background: var(--jf-palette-primary-main);
++
++        &:hover {
++            background: var(--jf-palette-primary-dark);
++        }
++    }
++
++    .cinemaSidebar .MuiListItemText-primary {
++        overflow: hidden;
++        font-size: 0.95rem;
++        text-overflow: ellipsis;
++        white-space: nowrap;
++    }
++
++    .cinemaSidebar .MuiListItemIcon-root {
++        min-width: 36px;
++    }
++
++    .cinemaSidebar .MuiListItemButton-root.Mui-selected .MuiListItemIcon-root {
++        color: inherit;
++    }
++
++    .cinemaSidebar .cinemaBrand {
++        margin-bottom: 1rem;
++    }
++
++    .cinemaSidebar .cinemaBrand .MuiListItemText-primary {
++        font-size: 1.25rem;
++        font-weight: 700;
++        letter-spacing: -0.04em;
++    }
++
++    .cinemaSidebar .cinemaBrand .MuiListItemText-secondary {
++        overflow: hidden;
++        font-size: 0.75rem;
++        text-overflow: ellipsis;
++        white-space: nowrap;
++    }
++
++    .cinemaSidebar .cinemaUserLink {
++        margin-bottom: 1rem;
++    }
++
++    .cinemaSidebar .MuiDivider-root {
++        margin: 0.8rem;
++    }
++
++    .cinemaSidebarSettings {
++        margin-top: auto;
++    }
++
++    .cinemaLibraryDocument {
++        .skinHeader {
++            inset-inline-start: 240px;
++            width: auto;
++        }
++
++        .mainAnimatedPage {
++            left: 240px;
++        }
++
++        .mainDrawerButton,
++        .pageTitleWithDefaultLogo {
++            display: none;
++        }
++    }
++
++    .cinemaHomeTitle {
++        display: block;
++        margin: 0 0 1.2rem;
++        font-size: clamp(1.8rem, 3vw, 2.4rem);
++        font-weight: 700;
++        letter-spacing: -0.045em;
++    }
++
++    .homePage .sectionTitle {
++        font-weight: 650;
++        letter-spacing: -0.025em;
++    }
++
++    .homePage .cardBox {
++        border-radius: 14px;
++    }
++
++    .cinemaEmptyLibrary {
++        position: relative;
++        display: flex;
++        align-items: center;
++        min-height: 430px;
++        box-sizing: border-box;
++        margin: 0 3.3%;
++        padding: clamp(1.5rem, 5vw, 4rem);
++        overflow: hidden;
++        border: 1px solid var(--jf-palette-divider);
++        border-radius: 22px;
++        background: var(--cinema-backdrop);
++    }
++
++    .cinemaEmptyLibraryContent {
++        position: relative;
++        max-width: 34rem;
++    }
++
++    .cinemaEmptyLibraryIcon {
++        display: block;
++        margin-bottom: 1.2rem;
++        color: var(--jf-palette-primary-main);
++        font-size: 3.2rem;
++    }
++
++    .cinemaEmptyLibrary h2 {
++        margin: 0 0 0.8rem;
++        font-size: clamp(1.7rem, 2.5vw, 2.5rem);
++        font-weight: 700;
++        letter-spacing: -0.04em;
++        line-height: 1.2;
++    }
++
++    .cinemaEmptyLibrary p {
++        max-width: 30rem;
++        margin: 0 0 1.8rem;
++        color: var(--jf-palette-text-secondary);
++        font-size: 1.05rem;
++        line-height: 1.65;
++    }
++
++    .cinemaEmptyLibrary .emby-button {
++        min-width: 10rem;
++        padding: 0.85rem 1.5rem;
++        border-radius: 16px;
++        color: var(--jf-palette-primary-contrastText);
++        background: var(--jf-palette-primary-main);
++        box-shadow: none;
++        font-weight: 650;
++    }
++
++    .cinemaSidebar a:focus-visible,
++    .cinemaEmptyLibrary .emby-button:focus-visible {
++        outline: 3px solid var(--jf-palette-secondary-main);
++        outline-offset: 3px;
++        box-shadow: 0 0 0 3px var(--jf-palette-background-default), 0 0 0 6px var(--jf-palette-secondary-main);
++    }
++
++    .cinemaEmptyLibrary .emby-button:hover:not(:disabled) {
++        background: var(--jf-palette-primary-dark);
++    }
++
++    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
++        .cinemaSidebar .MuiDrawer-paper {
++            background: var(--cinema-glass-sheen), var(--cinema-glass-bg);
++            box-shadow: var(--cinema-glass-shadow);
++            backdrop-filter: var(--cinema-glass-filter);
++        }
++    }
++
++    @media (max-width: 899px) {
++        .cinemaHomeTitle {
++            font-size: 1.9rem;
++        }
++
++        .cinemaEmptyLibrary {
++            min-height: 370px;
++            margin: 0 5%;
++            padding: 2rem 1.5rem;
++        }
++    }
++
++    @media (prefers-reduced-motion: reduce) {
++        .homePage .cardBox {
++            transition: none;
++        }
++    }
++}
+diff --git a/src/styles/librarybrowser.scss b/src/styles/librarybrowser.scss
+index f88635bf37..3e806cf0b5 100644
+--- a/src/styles/librarybrowser.scss
++++ b/src/styles/librarybrowser.scss
+@@ -101,11 +101,11 @@
+ }
+ 
+ .standalonePage {
+-    padding-top: 4.5em !important;
++    padding-top: var(--standalone-page-top, 4.5em) !important;
+ }
+ 
+ .wizardPage {
+-    padding-top: 7em !important;
++    padding-top: var(--wizard-page-top, 7em) !important;
+ }
+ 
+ .libraryPage:not(.noSecondaryNavPage) {
+diff --git a/src/themes/_base/theme.ts b/src/themes/_base/theme.ts
+index 31ced1db8f..6eb319a053 100644
+--- a/src/themes/_base/theme.ts
++++ b/src/themes/_base/theme.ts
+@@ -1,8 +1,23 @@
+-import type { ColorSystemOptions, ThemeOptions } from '@mui/material/styles';
++import type { ColorSystemOptions, CSSObject, Theme, ThemeOptions } from '@mui/material/styles';
+ import type {} from '@mui/material/themeCssVarsAugmentation';
+ 
+ const LIST_ICON_WIDTH = 36;
+ 
++const CINEMA_GLASS_SURFACE: CSSObject = {
++    background: 'var(--cinema-glass-fallback, #171c2a)',
++    boxShadow: 'none',
++    '@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))': {
++        background: 'var(--cinema-glass-sheen, none), var(--cinema-glass-bg, rgba(8, 12, 22, 0.78))',
++        boxShadow: 'var(--cinema-glass-shadow, none)',
++        WebkitBackdropFilter: 'var(--cinema-glass-filter, blur(14px) saturate(160%))',
++        backdropFilter: 'var(--cinema-glass-filter, blur(14px) saturate(160%))'
++    }
++};
++
++const cinemaStyles = (theme: Theme, styles: CSSObject): CSSObject => ({
++    [theme.getColorSchemeSelector('cinema')]: styles
++});
++
+ /** The default "Dark" color scheme. */
+ export const DEFAULT_COLOR_SCHEME: ColorSystemOptions = {
+     palette: {
+@@ -35,7 +50,7 @@ export const DEFAULT_COLOR_SCHEME: ColorSystemOptions = {
+ /** The default customizations to the default MUI theme. */
+ export const DEFAULT_THEME_OPTIONS: ThemeOptions = {
+     typography: {
+-        fontFamily: '"Noto Sans", sans-serif',
++        fontFamily: 'var(--jf-font-family, "Noto Sans", sans-serif)',
+         button: {
+             textTransform: 'none'
+         },
+@@ -50,8 +65,50 @@ export const DEFAULT_THEME_OPTIONS: ThemeOptions = {
+         }
+     },
+     components: {
++        MuiTypography: {
++            styleOverrides: {
++                h1: ({ theme }) => cinemaStyles(theme, {
++                    fontSize: 'clamp(1.75rem, 3vw, 2rem)',
++                    fontWeight: 700,
++                    letterSpacing: '-0.035em'
++                }),
++                h2: ({ theme }) => cinemaStyles(theme, {
++                    fontSize: '1.2rem',
++                    fontWeight: 600,
++                    letterSpacing: '-0.02em'
++                }),
++                h3: ({ theme }) => cinemaStyles(theme, {
++                    fontWeight: 600,
++                    letterSpacing: '-0.015em'
++                })
++            }
++        },
++        MuiButtonBase: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    '&.Mui-focusVisible': {
++                        outline: `2px solid ${theme.vars.palette.secondary.main}`,
++                        outlineOffset: 3
++                    }
++                })
++            }
++        },
++        MuiPaper: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    backgroundImage: 'none',
++                    boxShadow: 'none'
++                }),
++                rounded: ({ theme }) => cinemaStyles(theme, {
++                    borderRadius: 16
++                })
++            }
++        },
+         MuiAlert: {
+             styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    borderRadius: 14
++                }),
+                 message: {
+                     // NOTE: This seems like a bug. Block content does not fill the container width.
+                     flexGrow: 1
+@@ -60,15 +117,39 @@ export const DEFAULT_THEME_OPTIONS: ThemeOptions = {
+         },
+         MuiAppBar: {
+             styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    ...CINEMA_GLASS_SURFACE,
++                    borderBottom: '1px solid var(--cinema-glass-border, rgba(221, 232, 255, 0.38))'
++                }),
+                 colorTransparent: ({ theme }) => ({
+                     color: theme.vars.palette.text.primary
+                 })
+             }
+         },
++        MuiDialog: {
++            styleOverrides: {
++                paper: ({ theme }) => cinemaStyles(theme, {
++                    ...CINEMA_GLASS_SURFACE,
++                    border: '1px solid var(--cinema-glass-border, rgba(221, 232, 255, 0.38))'
++                })
++            }
++        },
+         MuiButton: {
+             defaultProps: {
+                 variant: 'contained'
+             },
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    minHeight: 44,
++                    borderRadius: 16,
++                    paddingInline: 24,
++                    fontWeight: 600,
++                    boxShadow: 'none',
++                    '&:hover': {
++                        boxShadow: 'none'
++                    }
++                })
++            },
+             variants: [
+                 {
+                     props: {
+@@ -86,11 +167,82 @@ export const DEFAULT_THEME_OPTIONS: ThemeOptions = {
+                 variant: 'filled'
+             }
+         },
++        MuiFilledInput: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    borderRadius: 14,
++                    border: `1px solid ${theme.vars.palette.divider}`,
++                    '&::before, &::after': {
++                        display: 'none'
++                    },
++                    '&.Mui-focused': {
++                        borderColor: theme.vars.palette.secondary.main
++                    },
++                    '&.Mui-error': {
++                        borderColor: theme.vars.palette.error.main
++                    }
++                })
++            }
++        },
++        MuiOutlinedInput: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    borderRadius: 14,
++                    '&.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline': {
++                        borderColor: theme.vars.palette.secondary.main
++                    }
++                })
++            }
++        },
++        MuiFormLabel: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    '&.Mui-focused:not(.Mui-error)': {
++                        color: theme.vars.palette.secondary.main
++                    }
++                })
++            }
++        },
+         MuiFormHelperText: {
+             styleOverrides: {
+-                root: {
+-                    fontSize: '1rem'
+-                }
++                root: ({ theme }) => ({
++                    fontSize: '1rem',
++                    ...cinemaStyles(theme, {
++                        fontSize: '0.8125rem',
++                        lineHeight: 1.6,
++                        marginTop: 8
++                    })
++                })
++            }
++        },
++        MuiCheckbox: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    '&.MuiCheckbox-colorPrimary.Mui-checked:not(.Mui-disabled)': {
++                        color: theme.vars.palette.secondary.main
++                    }
++                })
++            }
++        },
++        MuiRadio: {
++            styleOverrides: {
++                root: ({ theme }) => cinemaStyles(theme, {
++                    '&.MuiRadio-colorPrimary.Mui-checked:not(.Mui-disabled)': {
++                        color: theme.vars.palette.secondary.main
++                    }
++                })
++            }
++        },
++        MuiSwitch: {
++            styleOverrides: {
++                colorPrimary: ({ theme }) => cinemaStyles(theme, {
++                    '&.Mui-checked:not(.Mui-disabled)': {
++                        color: theme.vars.palette.secondary.main
++                    },
++                    '&.Mui-checked:not(.Mui-disabled) + .MuiSwitch-track': {
++                        backgroundColor: theme.vars.palette.secondary.main
++                    }
++                })
+             }
+         },
+         MuiTextField: {
+diff --git a/src/themes/cinema/index.ts b/src/themes/cinema/index.ts
+new file mode 100644
+index 0000000000..fe37b957de
+--- /dev/null
++++ b/src/themes/cinema/index.ts
+@@ -0,0 +1,81 @@
++import { buildCustomColorScheme } from 'themes/utils';
++
++const theme = buildCustomColorScheme({
++    palette: {
++        mode: 'dark',
++        primary: {
++            main: '#8bbcff',
++            light: '#acd1ff',
++            dark: '#72a7eb',
++            contrastText: '#0b0b0d',
++            mainChannel: '139 188 255',
++            lightChannel: '172 209 255',
++            darkChannel: '114 167 235',
++            contrastTextChannel: '11 11 13'
++        },
++        secondary: {
++            main: '#0a84ff',
++            light: '#66b2ff',
++            dark: '#0063cc',
++            contrastText: '#ffffff',
++            mainChannel: '10 132 255',
++            lightChannel: '102 178 255',
++            darkChannel: '0 99 204',
++            contrastTextChannel: '255 255 255'
++        },
++        background: {
++            default: '#0b0b0d',
++            paper: '#171c2a',
++            defaultChannel: '11 11 13',
++            paperChannel: '23 28 42'
++        },
++        text: {
++            primary: '#f5f5f7',
++            secondary: '#bcc4d3',
++            primaryChannel: '245 245 247',
++            secondaryChannel: '188 196 211'
++        },
++        divider: 'rgba(173, 195, 236, 0.2)',
++        dividerChannel: '173 195 236',
++        action: {
++            hover: 'rgba(139, 188, 255, 0.08)',
++            selected: 'rgba(139, 188, 255, 0.12)',
++            selectedOpacity: 0.12,
++            focus: 'rgba(10, 132, 255, 0.24)',
++            selectedChannel: '139 188 255',
++            activeChannel: '245 245 247'
++        },
++        error: {
++            main: '#ff453a',
++            light: '#ff6961',
++            dark: '#e23d33',
++            contrastText: '#0b0b0d',
++            mainChannel: '255 69 58',
++            lightChannel: '255 105 97',
++            darkChannel: '226 61 51',
++            contrastTextChannel: '11 11 13'
++        },
++        Alert: {
++            infoFilledBg: '#172b40',
++            infoFilledColor: '#d6e9ff'
++        },
++        AppBar: {
++            defaultBg: '#171c2a'
++        },
++        Button: {
++            inheritContainedBg: '#252d40',
++            inheritContainedHoverBg: '#303c55'
++        },
++        FilledInput: {
++            bg: '#242c40',
++            hoverBg: '#2b354d',
++            disabledBg: '#1c202c'
++        },
++        SnackbarContent: {
++            bg: '#20283b',
++            color: '#f5f5f7'
++        }
++    }
++});
++
++export default theme;
+diff --git a/src/themes/cinema/theme.scss b/src/themes/cinema/theme.scss
+new file mode 100644
+index 0000000000..e4f3fa4492
+--- /dev/null
++++ b/src/themes/cinema/theme.scss
+@@ -0,0 +1,288 @@
++@use '../_base/theme' with (
++    $background-default: #0b0b0d,
++    $background-paper: #171c2a,
++    $primary-main: #8bbcff,
++    $primary-dark: #72a7eb,
++    $primary-light: #acd1ff,
++    $primary-hover: rgba(139, 188, 255, 0.08),
++    $primary-contrastText: #0b0b0d,
++    $secondary-main: #0a84ff,
++    $secondary-contrastText: #fff,
++    $text-primary: #f5f5f7,
++    $text-secondary: #bcc4d3,
++    $error-main: #ff453a,
++    $error-dark: #e23d33,
++    $error-light: #ff6961,
++    $error-contrastText: #0b0b0d,
++    $divider: rgba(173, 195, 236, 0.2),
++    $action-focus: rgba(10, 132, 255, 0.24),
++    $action-hover: rgba(139, 188, 255, 0.08),
++    $alert-infoFilledBg: #172b40,
++    $alert-infoFilledColor: #d6e9ff,
++    $appBar-defaultBg: #171c2a,
++    $appBar-transparentBg: #171c2a,
++    $filledInput-bg: #242c40,
++    $filledInput-borderColor: rgba(173, 195, 236, 0.2),
++    $card-borderRadius: 0.85rem,
++    $button-inheritContainedBg: #252d40,
++    $button-inheritContainedHoverBg: #303c55,
++    $snackbarContent-bg: #20283b,
++    $snackbarContent-color: #f5f5f7
++);
++
++html[data-theme="cinema"] {
++    --jf-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", system-ui, sans-serif;
++    --cinema-backdrop: radial-gradient(ellipse 48% 58% at 20% 24%, rgba(77, 131, 219, 0.5), transparent 100%), radial-gradient(ellipse 50% 60% at 82% 35%, rgba(141, 103, 206, 0.46), transparent 100%), radial-gradient(ellipse 44% 48% at 58% 92%, rgba(39, 156, 135, 0.32), transparent 100%), #0b0b0d;
++    --cinema-accent-violet: #c5b6ff;
++    --cinema-accent-mint: #75d9c4;
++    --cinema-glass-bg: rgba(8, 12, 22, 0.78);
++    --cinema-auth-glass-bg: rgba(12, 19, 35, 0.45);
++    --cinema-glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(139, 188, 255, 0.025) 24%, transparent 46%, rgba(197, 182, 255, 0.035) 76%, rgba(117, 217, 196, 0.025));
++    --cinema-glass-filter: blur(14px) saturate(160%);
++    --cinema-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 rgba(0, 0, 0, 0.38), 0 8px 24px rgba(0, 0, 0, 0.14);
++    --cinema-glass-fallback: #171c2a;
++    --cinema-glass-border: rgba(221, 232, 255, 0.38);
++
++    color: #f5f5f7;
++    color-scheme: dark;
++    font-family: var(--jf-font-family);
++    background: var(--cinema-backdrop);
++
++    body,
++    .backgroundContainer:not(.withBackdrop) {
++        background: var(--cinema-backdrop);
++    }
++
++    body,
++    input,
++    select,
++    textarea,
++    button {
++        font-family: var(--jf-font-family);
++    }
++
++    .emby-input,
++    .emby-select-withcolor,
++    .emby-textarea {
++        border-width: 1px;
++        border-radius: 14px;
++        color: #f5f5f7;
++    }
++
++    .emby-button.raised,
++    .button-submit,
++    .button-delete {
++        border-radius: 16px;
++        font-weight: 600;
++        box-shadow: none;
++    }
++
++    .button-delete {
++        background: #ff453a;
++        color: #0b0b0d;
++
++        &:focus,
++        &:hover:not(:disabled) {
++            background: #e23d33;
++            color: #0b0b0d;
++        }
++    }
++
++    .emby-checkbox:checked:not(:disabled) + span + .checkboxOutline {
++        border-color: #0a84ff;
++        background-color: #0a84ff;
++        color: #fff;
++    }
++
++    .mainDrawer,
++    .dialog,
++    .skinHeader-withBackground,
++    .skinHeader.semiTransparent {
++        background: var(--cinema-glass-fallback);
++        box-shadow: none;
++    }
++
++    .mainDrawer {
++        border-inline-end: 1px solid var(--cinema-glass-border);
++    }
++
++    .mainDrawer .navMenuOption {
++        border-radius: 14px;
++    }
++
++    .dialog:not(.dialog-fullscreen):not(.dialog-fixedSize) {
++        border: 1px solid var(--cinema-glass-border);
++        border-radius: 16px;
++    }
++
++    .skinHeader-withBackground,
++    .skinHeader.semiTransparent {
++        border-bottom: 1px solid var(--cinema-glass-border);
++    }
++
++    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
++        .mainDrawer,
++        .dialog,
++        .skinHeader-withBackground,
++        .skinHeader.semiTransparent {
++            background: var(--cinema-glass-sheen), var(--cinema-glass-bg);
++            box-shadow: var(--cinema-glass-shadow);
++            backdrop-filter: var(--cinema-glass-filter);
++        }
++
++        .skinHeader.semiTransparent {
++            backdrop-filter: var(--cinema-glass-filter) !important;
++        }
++    }
++
++    .dashboardDocument {
++        .MuiDrawer-paper {
++            background: var(--cinema-glass-fallback);
++            border-right: 1px solid var(--cinema-glass-border);
++            border-radius: 0;
++        }
++
++        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
++            .MuiDrawer-paper {
++                background: var(--cinema-glass-sheen), var(--cinema-glass-bg);
++                box-shadow: var(--cinema-glass-shadow);
++                backdrop-filter: var(--cinema-glass-filter);
++            }
++        }
++
++        .MuiDrawer-paper .MuiList-root {
++            padding: 0.5rem 0.75rem;
++        }
++
++        .MuiDrawer-paper .MuiListItemButton-root {
++            min-height: 44px;
++            margin-block: 0.15rem;
++            padding-block: 0.5rem;
++            padding-inline: 0.75rem;
++            border-radius: 14px;
++        }
++
++        .MuiDrawer-paper .MuiListItemButton-root.Mui-selected {
++            background: #8bbcff;
++            color: #0b0b0d;
++
++            .MuiListItemIcon-root {
++                color: inherit;
++            }
++
++            &:hover {
++                background: #72a7eb;
++            }
++        }
++
++        .MuiDrawer-paper .MuiListSubheader-root {
++            margin-top: 0.5rem;
++            padding-inline: 0.75rem;
++            color: var(--jf-palette-text-secondary, #bcc4d3);
++            font-size: 0.75rem;
++            line-height: 2.5;
++        }
++
++        .cinema-dashboard-account {
++            padding-inline: 0.75rem;
++            color: var(--jf-palette-text-secondary, #bcc4d3);
++
++            .MuiAvatar-root {
++                background-color: var(--cinema-accent-violet);
++                color: #0b0b0d;
++            }
++        }
++
++        .content-primary {
++            padding: 1.5rem clamp(1rem, 3vw, 3rem) 5rem;
++        }
++
++        .MuiTypography-root,
++        .MuiListItemText-root {
++            overflow-wrap: anywhere;
++        }
++
++        .MuiGrid-item,
++        .MuiStack-root {
++            min-width: 0;
++        }
++
++        #dashboardPage .MuiPaper-root,
++        #dashboardPage .MuiList-root {
++            border: 1px solid var(--jf-palette-divider);
++            border-radius: 1rem;
++        }
++
++        #dashboardGeneralPage .content-primary {
++            max-width: 60rem;
++            box-sizing: border-box;
++        }
++
++        .cinema-settings-group {
++            padding: 1.5rem;
++            border: 1px solid var(--jf-palette-divider);
++            border-radius: 1rem;
++            background: rgba(23, 28, 42, 0.82);
++
++            .MuiTypography-h2 {
++                color: var(--cinema-accent-mint);
++            }
++        }
++
++        .cinema-settings-actions {
++            display: flex;
++            justify-content: flex-end;
++
++            .MuiButton-root {
++                min-width: 10rem;
++            }
++        }
++
++        @media (max-width: 599px) {
++            .content-primary {
++                padding-top: 1rem;
++            }
++
++            .cinema-settings-group {
++                padding: 1rem;
++            }
++
++            .cinema-settings-actions .MuiButton-root {
++                width: 100%;
++            }
++        }
++    }
++
++    a:focus-visible,
++    button:focus-visible,
++    input:focus-visible,
++    select:focus-visible,
++    textarea:focus-visible,
++    [tabindex]:focus-visible {
++        outline: 2px solid #0a84ff;
++        outline-offset: 3px;
++    }
++
++    .emby-button:focus-visible {
++        box-shadow: 0 0 0 3px #0b0b0d, 0 0 0 6px #0a84ff;
++    }
++
++    @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
++        --cinema-glass-bg: var(--cinema-glass-fallback);
++        --cinema-auth-glass-bg: var(--cinema-glass-fallback);
++        --cinema-glass-sheen: none;
++        --cinema-glass-filter: none;
++        --cinema-glass-shadow: none;
++    }
++
++    @media (prefers-reduced-motion: reduce) {
++        *,
++        *::before,
++        *::after {
++            animation-duration: 0.01ms !important;
++            animation-iteration-count: 1 !important;
++            transition-duration: 0.01ms !important;
++            scroll-behavior: auto !important;
++        }
++    }
++}
+diff --git a/src/themes/index.ts b/src/themes/index.ts
+index 904162ddf2..0b27a8137e 100644
+--- a/src/themes/index.ts
++++ b/src/themes/index.ts
+@@ -3,6 +3,7 @@ import { createTheme } from '@mui/material/styles';
+ import { DEFAULT_THEME_OPTIONS } from './_base/theme';
+ import appletv from './appletv';
+ import blueradiance from './blueradiance';
++import cinema from './cinema';
+ import dark from './dark';
+ import light from './light';
+ import purplehaze from './purplehaze';
+@@ -15,11 +16,12 @@ const DEFAULT_THEME = createTheme({
+         colorSchemeSelector: '[data-theme="%s"]',
+         disableCssColorScheme: true
+     },
+-    defaultColorScheme: 'dark',
++    defaultColorScheme: 'cinema',
+     ...DEFAULT_THEME_OPTIONS,
+     colorSchemes: {
+         appletv,
+         blueradiance,
++        cinema,
+         dark,
+         light,
+         purplehaze,
+diff --git a/src/themes/styles.d.ts b/src/themes/styles.d.ts
+index 38bcfcb8b8..75e881051e 100644
+--- a/src/themes/styles.d.ts
++++ b/src/themes/styles.d.ts
+@@ -5,6 +5,7 @@ declare module '@mui/material/styles' {
+     interface ColorSchemeOverrides {
+         appletv: true;
+         blueradiance: true;
++        cinema: true;
+         purplehaze: true;
+         wmc: true;
+     }

@@ -56,7 +56,6 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Common.Updates;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Chapters;
 using MediaBrowser.Controller.ClientEvent;
 using MediaBrowser.Controller.Collections;
@@ -68,7 +67,6 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.LibraryTaskScheduler;
-using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Lyrics;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.MediaSegments;
@@ -601,8 +599,6 @@ namespace Emby.Server.Implementations
 
             serviceCollection.AddSingleton<IProviderManager, ProviderManager>();
 
-            // TODO: Refactor to eliminate the circular dependency here so that Lazy<T> isn't required
-            serviceCollection.AddTransient(provider => new Lazy<ILiveTvManager>(provider.GetRequiredService<ILiveTvManager>));
             serviceCollection.AddSingleton<IDtoService, DtoService>();
 
             serviceCollection.AddSingleton<ISessionManager, SessionManager>();
@@ -692,7 +688,6 @@ namespace Emby.Server.Implementations
         {
             // For now there's no real way to inject these properly
             BaseItem.ChapterManager = Resolve<IChapterManager>();
-            BaseItem.ChannelManager = Resolve<IChannelManager>();
             BaseItem.ConfigurationManager = ConfigurationManager;
             BaseItem.FileSystem = Resolve<IFileSystem>();
             BaseItem.ItemRepository = Resolve<IItemRepository>();
@@ -711,7 +706,6 @@ namespace Emby.Server.Implementations
             Folder.LimitedConcurrencyLibraryScheduler = Resolve<ILimitedConcurrencyLibraryScheduler>();
             Episode.MediaEncoder = Resolve<IMediaEncoder>();
             UserView.TVSeriesManager = Resolve<ITVSeriesManager>();
-            Video.RecordingsManager = Resolve<IRecordingsManager>();
         }
 
         /// <summary>

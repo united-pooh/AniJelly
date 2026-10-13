@@ -47,12 +47,6 @@ namespace MediaBrowser.Model.Dto
         public string Etag { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of the source.
-        /// </summary>
-        /// <value>The type of the source.</value>
-        public string SourceType { get; set; }
-
-        /// <summary>
         /// Gets or sets the playlist item identifier.
         /// </summary>
         /// <value>The playlist item identifier.</value>
@@ -134,8 +128,6 @@ namespace MediaBrowser.Model.Dto
         /// <value>The path.</value>
         public string Path { get; set; }
 
-        public bool? EnableMediaSourceDisplay { get; set; }
-
         /// <summary>
         /// Gets or sets the official rating.
         /// </summary>
@@ -147,14 +139,6 @@ namespace MediaBrowser.Model.Dto
         /// </summary>
         /// <value>The custom rating.</value>
         public string CustomRating { get; set; }
-
-        /// <summary>
-        /// Gets or sets the channel identifier.
-        /// </summary>
-        /// <value>The channel identifier.</value>
-        public Guid? ChannelId { get; set; }
-
-        public string ChannelName { get; set; }
 
         /// <summary>
         /// Gets or sets the overview.
@@ -221,8 +205,6 @@ namespace MediaBrowser.Model.Dto
         /// </summary>
         /// <value>The number.</value>
         public string Number { get; set; }
-
-        public string ChannelNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the index number.
@@ -620,8 +602,6 @@ namespace MediaBrowser.Model.Dto
         /// <value>The series count.</value>
         public int? SeriesCount { get; set; }
 
-        public int? ProgramCount { get; set; }
-
         /// <summary>
         /// Gets or sets the episode count.
         /// </summary>
@@ -683,105 +663,10 @@ namespace MediaBrowser.Model.Dto
         public int? IsoSpeedRating { get; set; }
 
         /// <summary>
-        /// Gets or sets the series timer identifier.
-        /// </summary>
-        /// <value>The series timer identifier.</value>
-        public string SeriesTimerId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the program identifier.
-        /// </summary>
-        /// <value>The program identifier.</value>
-        public string ProgramId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the channel primary image tag.
-        /// </summary>
-        /// <value>The channel primary image tag.</value>
-        public string ChannelPrimaryImageTag { get; set; }
-
-        /// <summary>
-        /// Gets or sets the start date of the recording, in UTC.
-        /// </summary>
-        public DateTime? StartDate { get; set; }
-
-        /// <summary>
-        /// Gets or sets the completion percentage.
-        /// </summary>
-        /// <value>The completion percentage.</value>
-        public double? CompletionPercentage { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is repeat.
-        /// </summary>
-        /// <value><c>true</c> if this instance is repeat; otherwise, <c>false</c>.</value>
-        public bool? IsRepeat { get; set; }
-
-        /// <summary>
-        /// Gets or sets the episode title.
-        /// </summary>
-        /// <value>The episode title.</value>
-        public string EpisodeTitle { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of the channel.
-        /// </summary>
-        /// <value>The type of the channel.</value>
-        public ChannelType? ChannelType { get; set; }
-
-        /// <summary>
         /// Gets or sets the audio.
         /// </summary>
         /// <value>The audio.</value>
         public ProgramAudio? Audio { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is movie.
-        /// </summary>
-        /// <value><c>true</c> if this instance is movie; otherwise, <c>false</c>.</value>
-        public bool? IsMovie { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is sports.
-        /// </summary>
-        /// <value><c>true</c> if this instance is sports; otherwise, <c>false</c>.</value>
-        public bool? IsSports { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is series.
-        /// </summary>
-        /// <value><c>true</c> if this instance is series; otherwise, <c>false</c>.</value>
-        public bool? IsSeries { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is live.
-        /// </summary>
-        /// <value><c>true</c> if this instance is live; otherwise, <c>false</c>.</value>
-        public bool? IsLive { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is news.
-        /// </summary>
-        /// <value><c>true</c> if this instance is news; otherwise, <c>false</c>.</value>
-        public bool? IsNews { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is kids.
-        /// </summary>
-        /// <value><c>true</c> if this instance is kids; otherwise, <c>false</c>.</value>
-        public bool? IsKids { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is premiere.
-        /// </summary>
-        /// <value><c>true</c> if this instance is premiere; otherwise, <c>false</c>.</value>
-        public bool? IsPremiere { get; set; }
-
-        /// <summary>
-        /// Gets or sets the timer identifier.
-        /// </summary>
-        /// <value>The timer identifier.</value>
-        public string TimerId { get; set; }
 
         /// <summary>
         /// Gets or sets the gain required for audio normalization.
@@ -794,12 +679,6 @@ namespace MediaBrowser.Model.Dto
         /// </summary>
         /// <value>The gain required for audio normalization.</value>
         public float? AlbumNormalizationGain { get; set; }
-
-        /// <summary>
-        /// Gets or sets the current program.
-        /// </summary>
-        /// <value>The current program.</value>
-        public BaseItemDto CurrentProgram { get; set; }
 
         public string OriginalLanguage { get; set; }
     }

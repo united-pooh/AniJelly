@@ -46,8 +46,7 @@ public class NextUpService : INextUpService
 
         using var context = _dbProvider.CreateDbContext();
 
-        var query = context.BaseItems
-            .AsNoTracking()
+        var query = BaseItemRepository.ExcludeRetiredItems(context.BaseItems.AsNoTracking())
             .Where(i => filter.TopParentIds.Contains(i.TopParentId!.Value))
             .Where(i => i.Type == _itemTypeLookup.BaseItemKindNames[BaseItemKind.Episode])
             .Join(

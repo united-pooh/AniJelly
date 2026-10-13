@@ -495,6 +495,24 @@ namespace Emby.Naming.Common
             VideoExtraRules =
             [
                 new ExtraRule(
+                    ExtraType.Clip,
+                    ExtraRuleType.DirectoryName,
+                    "NCOP",
+                    MediaType.Video),
+
+                new ExtraRule(
+                    ExtraType.Clip,
+                    ExtraRuleType.DirectoryName,
+                    "NCED",
+                    MediaType.Video),
+
+                new ExtraRule(
+                    ExtraType.Clip,
+                    ExtraRuleType.Regex,
+                    @"(?<![a-z0-9])NC(?:OP|ED)(?:[0-9]+)?(?:v[0-9]+)?(?![a-z0-9])",
+                    MediaType.Video),
+
+                new ExtraRule(
                     ExtraType.Trailer,
                     ExtraRuleType.DirectoryName,
                     "trailers",

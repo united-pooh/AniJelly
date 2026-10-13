@@ -37,8 +37,9 @@ public sealed class StartOverTests : IDisposable
         using var factory = new SameRootApplicationFactory(_root);
         using var client = factory.CreateClient();
 
-        using var response = await client.GetAsync("/Startup/Configuration", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var user = new StartupUserDto { Name = "Restarted", Password = "RestartedPassword" };
+        using var response = await client.PostAsJsonAsync("/Startup/User", user, _jsonOptions, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         var dbContextFactory = factory.Services.GetRequiredService<IDbContextFactory<JellyfinDbContext>>();
         await using var context = await dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
@@ -90,11 +91,6 @@ public sealed class StartOverTests : IDisposable
         {
             using var client = factory.CreateClient();
             paths = factory.Services.GetRequiredService<IApplicationPaths>();
-
-            using (var response = await client.GetAsync("/Startup/User", TestContext.Current.CancellationToken))
-            {
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            }
 
             var user = new StartupUserDto { Name = "StartOver", Password = "StartOver" };
             using (var response = await client.PostAsJsonAsync("/Startup/User", user, _jsonOptions, TestContext.Current.CancellationToken))

@@ -67,7 +67,6 @@ public class TrickplayMoveImagesTask : IScheduledTask
         var totalVideoCount = _libraryManager.GetCount(new InternalItemsQuery
         {
             MediaTypes = [MediaType.Video],
-            SourceTypes = [SourceType.Library],
             IsVirtualItem = false,
             IsFolder = false,
             Recursive = true,
@@ -77,7 +76,6 @@ public class TrickplayMoveImagesTask : IScheduledTask
         var trickplayQuery = new InternalItemsQuery
         {
             MediaTypes = [MediaType.Video],
-            SourceTypes = [SourceType.Library],
             IsVirtualItem = false,
             IsFolder = false,
             IncludeOwnedItems = true

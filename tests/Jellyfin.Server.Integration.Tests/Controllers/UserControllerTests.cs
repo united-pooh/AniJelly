@@ -32,7 +32,7 @@ namespace Jellyfin.Server.Integration.Tests.Controllers
             => httpClient.PostAsJsonAsync("Users/New", request, _jsonOptions);
 
         private Task<HttpResponseMessage> UpdateUserPassword(HttpClient httpClient, Guid userId, UpdateUserPassword request)
-            => httpClient.PostAsJsonAsync("Users/" + userId.ToString("N", CultureInfo.InvariantCulture) + "/Password", request, _jsonOptions);
+            => httpClient.PostAsJsonAsync("Users/Password?userId=" + userId.ToString("N", CultureInfo.InvariantCulture), request, _jsonOptions);
 
         [Fact]
         [Priority(-1)]

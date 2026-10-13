@@ -55,7 +55,6 @@ public class MoveTrickplayFiles : IMigrationRoutine
         var trickplayQuery = new InternalItemsQuery
         {
             MediaTypes = [MediaType.Video],
-            SourceTypes = [SourceType.Library],
             IsVirtualItem = false,
             IsFolder = false,
             IncludeOwnedItems = true

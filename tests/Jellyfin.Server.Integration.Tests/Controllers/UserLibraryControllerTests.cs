@@ -28,7 +28,7 @@ public sealed class UserLibraryControllerTests : IClassFixture<JellyfinApplicati
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
 
-        var response = await client.GetAsync($"Users/{Guid.NewGuid()}/Items/Root", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"Items/Root?userId={Guid.NewGuid()}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -42,11 +42,10 @@ public sealed class UserLibraryControllerTests : IClassFixture<JellyfinApplicati
     }
 
     [Theory]
-    [InlineData("Users/{0}/Items/{1}")]
-    [InlineData("Users/{0}/Items/{1}/Intros")]
-    [InlineData("Users/{0}/Items/{1}/LocalTrailers")]
-    [InlineData("Users/{0}/Items/{1}/SpecialFeatures")]
-    [InlineData("Users/{0}/Items/{1}/Lyrics")]
+    [InlineData("Items/{1}?userId={0}")]
+    [InlineData("Items/{1}/Intros?userId={0}")]
+    [InlineData("Items/{1}/LocalTrailers?userId={0}")]
+    [InlineData("Items/{1}/SpecialFeatures?userId={0}")]
     public async Task GetItem_NonexistentUserId_NotFound(string format)
     {
         var client = _factory.CreateClient();
@@ -59,11 +58,10 @@ public sealed class UserLibraryControllerTests : IClassFixture<JellyfinApplicati
     }
 
     [Theory]
-    [InlineData("Users/{0}/Items/{1}")]
-    [InlineData("Users/{0}/Items/{1}/Intros")]
-    [InlineData("Users/{0}/Items/{1}/LocalTrailers")]
-    [InlineData("Users/{0}/Items/{1}/SpecialFeatures")]
-    [InlineData("Users/{0}/Items/{1}/Lyrics")]
+    [InlineData("Items/{1}?userId={0}")]
+    [InlineData("Items/{1}/Intros?userId={0}")]
+    [InlineData("Items/{1}/LocalTrailers?userId={0}")]
+    [InlineData("Items/{1}/SpecialFeatures?userId={0}")]
     public async Task GetItem_NonexistentItemId_NotFound(string format)
     {
         var client = _factory.CreateClient();
@@ -84,7 +82,7 @@ public sealed class UserLibraryControllerTests : IClassFixture<JellyfinApplicati
         var userDto = await AuthHelper.GetUserDtoAsync(client);
         var rootFolderDto = await AuthHelper.GetRootFolderDtoAsync(client, userDto.Id);
 
-        var response = await client.GetAsync($"Users/{userDto.Id}/Items/{rootFolderDto.Id}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"Items/{rootFolderDto.Id}?userId={userDto.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var rootDto = await response.Content.ReadFromJsonAsync<BaseItemDto>(_jsonOptions, TestContext.Current.CancellationToken);
         Assert.NotNull(rootDto);
@@ -99,15 +97,15 @@ public sealed class UserLibraryControllerTests : IClassFixture<JellyfinApplicati
         var userDto = await AuthHelper.GetUserDtoAsync(client);
         var rootFolderDto = await AuthHelper.GetRootFolderDtoAsync(client, userDto.Id);
 
-        var response = await client.GetAsync($"Users/{userDto.Id}/Items/{rootFolderDto.Id}/Intros", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"Items/{rootFolderDto.Id}/Intros?userId={userDto.Id}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var rootDto = await response.Content.ReadFromJsonAsync<QueryResult<BaseItemDto>>(_jsonOptions, TestContext.Current.CancellationToken);
         Assert.NotNull(rootDto);
     }
 
     [Theory(Skip = "Disabled for flaky execution after refactor.")]
-    [InlineData("Users/{0}/Items/{1}/LocalTrailers")]
-    [InlineData("Users/{0}/Items/{1}/SpecialFeatures")]
+    [InlineData("Items/{1}/LocalTrailers?userId={0}")]
+    [InlineData("Items/{1}/SpecialFeatures?userId={0}")]
     public async Task LocalTrailersAndSpecialFeatures_UserIdAndItemId_Valid(string format)
     {
         var client = _factory.CreateClient();
